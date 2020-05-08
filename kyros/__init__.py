@@ -1,2 +1,1 @@
-class WhatsappConnection:
-    
+from .whatsapp import *
