@@ -1,7 +1,7 @@
 import pickle
 
 
-class WhatsappSession:
+class Session:
     client_id = None
     server_id = None
 
