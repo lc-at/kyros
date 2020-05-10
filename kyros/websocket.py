@@ -31,13 +31,15 @@ class WebsocketMessages:
         self.messages[tag] = data
 
     async def get(self, tag, timeout=10):
-        async def get_message():
+        def get_message():
             while True:
                 if tag not in self.messages:
                     continue
-            return self.messages[tag]
+                return self.messages[tag]
 
-        return asyncio.wait_for(get_message(), timeout)
+        loop = asyncio.get_event_loop()
+        return await asyncio.wait_for(loop.run_in_executor(None, get_message),
+                                      timeout)
 
 
 class WebsocketClient:
@@ -55,15 +57,24 @@ class WebsocketClient:
             while True:
                 if self.cancel_event.is_set():
                     return
-                raw_message = await self.ws.recv()
-                message = WebsocketMessage.from_encoded(raw_message)
+                if not self.ws.messages:
+                    continue
+                raw_message = self.ws.messages.pop()
+                try:
+                    message = WebsocketMessage.from_encoded(raw_message)
+                except Exception as e:
+                    print(f"error decoding message: {raw_message[:20]} -> {e}")
+                    continue
                 self.messages.add(message.tag, message.data)
 
         loop = asyncio.get_event_loop()
-        return loop.run_in_executor(None, receiver)
+        self.receiver_future = loop.run_in_executor(None, receiver)
 
     async def stop_receiving(self):
         if self.receiver_future:
             self.cancel_event.set()
             await self.receiver_future
         return
+
+    async def send_message(self, message: WebsocketMessage):
+        await self.ws.send(message.encode())
