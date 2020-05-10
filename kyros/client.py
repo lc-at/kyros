@@ -3,9 +3,8 @@ import base64
 import json
 
 import donna25519
-import websockets
 
-from . import session, constants, crypto, utilities
+from . import session, constants, crypto, utilities, websocket
 
 
 class ClientProfile:
@@ -18,7 +17,7 @@ class Client:
     @classmethod
     async def create(cls):
         instance = cls()
-        await instance.connect_ws()
+        await instance.setup_ws()
         return instance
 
     def __init__(self):
@@ -28,9 +27,10 @@ class Client:
         self.session.private_key = donna25519.PrivateKey()
         self.session.public_key = self.session.private_key.get_public()
 
-    async def connect_ws(self):
-        self.ws = await websockets.connect(constants.WEBSOCKET_URI,
-                                           origin=constants.WEBSOCKET_ORIGIN)
+    async def setup_ws(self):
+        self.ws = websocket.WebsocketClient()
+        await self.ws.connect()
+        await self.ws.start_receiving()
 
     def load_profile(self, profile):
         self.profile = profile
@@ -45,27 +45,25 @@ class Client:
         return {"tag": tag, "data": json.loads(json_obj)}
 
     async def send_init(self):
-        await self.ws.send(
-            self.encode_ws_message([
-                "admin", "init", self.profile.version,
-                [
-                    self.profile.long_description,
-                    self.profile.short_description
-                ], self.session.client_id, True
-            ])["data"])
+        init_message = websocket.WebsocketMessage(None, [
+            "admin", "init", self.profile.version,
+            [self.profile.long_description, self.profile.short_description],
+            self.session.client_id, True
+        ])
+        await self.ws.send_message(init_message)
 
-        message = self.decode_ws_message(await self.ws.recv())
-        if message["data"]["status"] != 200:
-            raise Exception(f"login failed, message: {message}")
+        resp = await self.ws.messages.get(init_message.tag)
+        if resp["status"] != 200:
+            raise Exception(f"login failed, message: {resp}")
 
-        self.session.server_id = message["data"]["ref"]
+        self.session.server_id = resp["ref"]
 
     async def qr_login(self):
         await self.send_init()
 
         async def wait_qr_scan():
-            message = self.decode_ws_message(await self.ws.recv())
-            connection_data = message["data"][1]
+            message = await self.ws.messages.get("s1")
+            connection_data = message[1]
 
             self.session.secret = base64.b64decode(
                 connection_data["secret"].encode())
