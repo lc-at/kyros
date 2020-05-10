@@ -6,7 +6,7 @@ import kyros
 
 
 async def main():
-    whatsapp = await kyros.Whatsapp.create()
+    whatsapp = await kyros.Client.create()
     qr_data, timeout = await whatsapp.qr_login()
     qr = pyqrcode.create(qr_data)
     print(qr.terminal(quiet_zone=1))
