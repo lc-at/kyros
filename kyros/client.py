@@ -8,22 +8,32 @@ import websockets
 from . import session, constants, crypto, utilities
 
 
-class Whatsapp:
+class ClientProfile:
+    version = constants.CLIENT_VERSION
+    long_description = constants.CLIENT_LONG_DESC
+    short_description = constants.CLIENT_SHORT_DESC
+
+
+class Client:
     @classmethod
     async def create(cls):
-        whatsapp = cls()
-        await whatsapp.connect_ws()
-        return whatsapp
+        instance = cls()
+        await instance.connect_ws()
+        return instance
 
     def __init__(self):
-        self.session = session.WhatsappSession()
+        self.profile = ClientProfile()
+        self.session = session.Session()
         self.session.client_id = utilities.generate_client_id()
         self.session.private_key = donna25519.PrivateKey()
         self.session.public_key = self.session.private_key.get_public()
 
     async def connect_ws(self):
         self.ws = await websockets.connect(constants.WEBSOCKET_URI,
-                                           origin="https://web.whatsapp.com")
+                                           origin=constants.WEBSOCKET_ORIGIN)
+
+    def load_profile(self, profile):
+        self.profile = profile
 
     def encode_ws_message(self, obj):
         message_tag = utilities.generate_message_tag()
@@ -37,9 +47,11 @@ class Whatsapp:
     async def send_init(self):
         await self.ws.send(
             self.encode_ws_message([
-                "admin", "init", constants.CLIENT_VERSION,
-                [constants.CLIENT_LONG_DESC, constants.CLIENT_SHORT_DESC],
-                self.session.client_id, True
+                "admin", "init", self.profile.version,
+                [
+                    self.profile.long_description,
+                    self.profile.short_description
+                ], self.session.client_id, True
             ])["data"])
 
         message = self.decode_ws_message(await self.ws.recv())
