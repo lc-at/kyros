@@ -1,1 +1,1 @@
-from .whatsapp import *
+from client import Client
