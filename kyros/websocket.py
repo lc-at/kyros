@@ -1,4 +1,5 @@
 import asyncio
+import concurrent.futures
 import json
 import threading
 
@@ -31,9 +32,12 @@ class WebsocketMessages:
         self.messages[tag] = data
 
     async def get(self, tag, timeout=10):
+        cancel_event = threading.Event()
+
         def get_message():
             while tag not in self.messages:
-                pass
+                if cancel_event.is_set():
+                    return
             return self.messages[tag]
 
         loop = asyncio.get_event_loop()
@@ -41,10 +45,10 @@ class WebsocketMessages:
 
         try:
             return await asyncio.wait_for(future, timeout)
-        except TimeoutError:
+        except concurrent.futures.TimeoutError:
             pass
         finally:
-            future.cancel()
+            cancel_event.set()
 
         raise TimeoutError
 
