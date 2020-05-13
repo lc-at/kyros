@@ -32,14 +32,21 @@ class WebsocketMessages:
 
     async def get(self, tag, timeout=10):
         def get_message():
-            while True:
-                if tag not in self.messages:
-                    continue
-                return self.messages[tag]
+            while tag not in self.messages:
+                pass
+            return self.messages[tag]
 
         loop = asyncio.get_event_loop()
-        return await asyncio.wait_for(loop.run_in_executor(None, get_message),
-                                      timeout)
+        future = loop.run_in_executor(None, get_message)
+
+        try:
+            return await asyncio.wait_for(future, timeout)
+        except TimeoutError:
+            pass
+        finally:
+            future.cancel()
+
+        raise TimeoutError
 
 
 class WebsocketClient:
@@ -48,6 +55,8 @@ class WebsocketClient:
     receiver_future = None
     cancel_event = threading.Event()
 
+    #def __init__(self, error_handler, message_):
+    #pass
     async def connect(self):
         self.ws = await websockets.connect(constants.WEBSOCKET_URI,
                                            origin=constants.WEBSOCKET_ORIGIN)
@@ -73,7 +82,7 @@ class WebsocketClient:
     async def stop_receiving(self):
         if self.receiver_future:
             self.cancel_event.set()
-            await self.receiver_future
+            asyncio.ensure_future(self.receiver_future)
         return
 
     async def send_message(self, message: WebsocketMessage):
