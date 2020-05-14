@@ -8,7 +8,6 @@ def hkdf_expand(key, length):
 
 
 def validate_secrets(secret, shared_secret_expanded):
-    breakpoint()
     return Crypto.Hash.HMAC.new(shared_secret_expanded[32:64],
                                 secret[:32] + secret[64:],
                                 Crypto.Hash.SHA256).digest() == secret[32:64]
