@@ -1,21 +1,23 @@
 import asyncio
 import concurrent.futures
 import json
-import threading
+import logging
 
 import websockets
 
 from . import constants, utilities
 
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class WebsocketMessage:
     def __init__(self, tag=None, data=None):
         self.tag = tag
+        if not self.tag:
+            self.tag = utilities.generate_message_tag()
         self.data = data
 
     def encode(self):
-        if not self.tag:
-            self.tag = utilities.generate_message_tag()
         encoded_message = f"{self.tag},{json.dumps(self.data)}"
         return encoded_message
 
@@ -32,16 +34,17 @@ class WebsocketMessages:
         self.messages[tag] = data
 
     async def get(self, tag, timeout=10):
-        cancel_event = threading.Event()
+        cancel_event = asyncio.Event()
 
         def get_message():
             while tag not in self.messages:
                 if cancel_event.is_set():
-                    return
+                    return None
             return self.messages[tag]
 
         loop = asyncio.get_event_loop()
         future = loop.run_in_executor(None, get_message)
+        logger.debug("Getting message with tag %s (in executor)", tag)
 
         try:
             return await asyncio.wait_for(future, timeout)
@@ -54,40 +57,47 @@ class WebsocketMessages:
 
 
 class WebsocketClient:
-    ws = None
+    websocket = None
     messages = WebsocketMessages()
     receiver_future = None
-    cancel_event = threading.Event()
+    cancel_event = asyncio.Event()
 
-    #def __init__(self, error_handler, message_):
-    #pass
+    def __init__(self, message_handler):
+        self.handle_message = message_handler
+
     async def connect(self):
-        self.ws = await websockets.connect(constants.WEBSOCKET_URI,
-                                           origin=constants.WEBSOCKET_ORIGIN)
+        logger.debug("Connecting to ws server")
+        self.websocket = await websockets.connect(
+            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN)
+        logger.debug("Websocket connected")
 
     async def start_receiving(self):
         def receiver():
             while True:
                 if self.cancel_event.is_set():
                     return
-                if not self.ws.messages:
+                if not self.websocket.messages:
                     continue
-                raw_message = self.ws.messages.pop()
+                raw_message = self.websocket.messages.pop()
                 try:
                     message = WebsocketMessage.from_encoded(raw_message)
-                except Exception as e:
-                    print(f"error decoding message: {raw_message[:20]} -> {e}")
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.warning("Ignored error decoding message: %s", exc)
                     continue
+                logger.debug("Received WS message with tag %s", message.tag)
                 self.messages.add(message.tag, message.data)
 
         loop = asyncio.get_event_loop()
         self.receiver_future = loop.run_in_executor(None, receiver)
+        logger.debug("Executed receiver func in executor")
 
     async def stop_receiving(self):
         if self.receiver_future:
             self.cancel_event.set()
             asyncio.ensure_future(self.receiver_future)
+            logger.debug("Stopped websocket receiver")
         return
 
     async def send_message(self, message: WebsocketMessage):
-        await self.ws.send(message.encode())
+        logger.debug("Sending a WS message with tag %s", message.tag)
+        await self.websocket.send(message.encode())
