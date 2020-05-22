@@ -1,16 +1,13 @@
 import asyncio
 import base64
-import json
+import logging
 
 import donna25519
 
-from . import session, constants, crypto, utilities, websocket
+from . import (constants, crypto, exceptions, message, session, utilities,
+               websocket)
 
-
-class ClientProfile:
-    version = constants.CLIENT_VERSION
-    long_description = constants.CLIENT_LONG_DESC
-    short_description = constants.CLIENT_SHORT_DESC
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 class Client:
@@ -18,43 +15,47 @@ class Client:
     async def create(cls):
         instance = cls()
         await instance.setup_ws()
+        instance.load_profile(constants.CLIENT_VERSION,
+                              constants.CLIENT_LONG_DESC,
+                              constants.CLIENT_SHORT_DESC)
+        logger.debug("Kyros instance created")
         return instance
 
     def __init__(self):
-        self.profile = ClientProfile()
+        self.profile = None
+        self.message_handler = message.MessageHandler()
         self.session = session.Session()
         self.session.client_id = utilities.generate_client_id()
         self.session.private_key = donna25519.PrivateKey()
         self.session.public_key = self.session.private_key.get_public()
+        self.phone_info = {}
+        self.websocket = None
 
     async def setup_ws(self):
-        self.ws = websocket.WebsocketClient()
-        await self.ws.connect()
-        await self.ws.start_receiving()
+        self.websocket = websocket.WebsocketClient(self.message_handler)
+        await self.websocket.connect()
+        await self.websocket.start_receiving()
 
-    def load_profile(self, profile):
-        self.profile = profile
-
-    def encode_ws_message(self, obj):
-        message_tag = utilities.generate_message_tag()
-        message = f"{message_tag},{json.dumps(obj)}"
-        return {"tag": message_tag, "data": message}
-
-    def decode_ws_message(self, message):
-        tag, json_obj = message.split(",", 1)
-        return {"tag": tag, "data": json.loads(json_obj)}
+    def load_profile(self, ver, long_desc, short_desc):
+        self.profile = {
+            "version": ver,
+            "long_description": long_desc,
+            "short_description": short_desc,
+        }
 
     async def send_init(self):
         init_message = websocket.WebsocketMessage(None, [
-            "admin", "init", self.profile.version,
-            [self.profile.long_description, self.profile.short_description],
-            self.session.client_id, True
+            "admin", "init", self.profile["version"],
+            [
+                self.profile["long_description"],
+                self.profile["short_description"]
+            ], self.session.client_id, True
         ])
-        await self.ws.send_message(init_message)
+        await self.websocket.send_message(init_message)
 
-        resp = await self.ws.messages.get(init_message.tag)
+        resp = await self.websocket.messages.get(init_message.tag)
         if resp["status"] != 200:
-            raise Exception(f"login failed, message: {resp}")
+            raise exceptions.LoginError(f"resp: {resp}")
 
         self.session.server_id = resp["ref"]
 
@@ -62,14 +63,16 @@ class Client:
         await self.send_init()
 
         async def wait_qr_scan():
-            message = await self.ws.messages.get("s1")
-            connection_data = message[1]
+            ws_message = await self.websocket.messages.get("s1")
+            connection_data = ws_message[1]
 
+            self.phone_info = connection_data["phone"]
             self.session.secret = base64.b64decode(
                 connection_data["secret"].encode())
             self.session.server_token = connection_data["serverToken"]
             self.session.client_token = connection_data["clientToken"]
             self.session.browser_token = connection_data["browserToken"]
+            self.session.wid = connection_data["wid"]
 
             self.session.shared_secret = self.session.private_key.do_exchange(
                 donna25519.PublicKey(self.session.secret[:32]))
@@ -78,7 +81,7 @@ class Client:
 
             if not crypto.validate_secrets(
                     self.session.secret, self.session.shared_secret_expanded):
-                raise Exception("HMAC validation failed")
+                raise exceptions.HMACValidationError
 
             self.session.keys_encrypted = self.session.shared_secret_expanded[
                 64:] + self.session.secret[64:]
@@ -95,6 +98,10 @@ class Client:
             base64.b64encode(self.session.public_key.public).decode(),
             self.session.client_id
         ]
-        qr = ",".join(qr_fragments)
+        qr_data = ",".join(qr_fragments)
 
-        return qr, asyncio.wait_for(wait_qr_scan(), 20)
+        return qr_data, asyncio.wait_for(wait_qr_scan(), 20)
+
+    async def shutdown(self):
+        await self.websocket.stop_receiving()
+        await self.websocket.websocket.close()
