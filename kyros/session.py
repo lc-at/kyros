@@ -25,9 +25,9 @@ class Session:
 
     @staticmethod
     def from_file(filename):
-        with open(filename, 'rb') as f:
-            return pickle.load(f)
+        with open(filename, "rb") as file:
+            return pickle.load(file)
 
     def save_to_file(self, filename):
-        with open(filename, 'wb') as f:
-            return pickle.dump(self, f)
+        with open(filename, "wb") as file:
+            return pickle.dump(self, file)
