@@ -1,5 +1,4 @@
 import asyncio
-import concurrent.futures
 import json
 import logging
 
@@ -33,34 +32,20 @@ class WebsocketMessages:
     def add(self, tag, data):
         self.messages[tag] = data
 
-    async def get(self, tag, timeout=10):
-        cancel_event = asyncio.Event()
-
-        def get_message():
+    def get(self, tag, timeout=10):
+        async def get_message():
             while tag not in self.messages:
-                if cancel_event.is_set():
-                    return None
+                await asyncio.sleep(0)
             return self.messages[tag]
 
-        loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(None, get_message)
         logger.debug("Getting message with tag %s (in executor)", tag)
 
-        try:
-            return await asyncio.wait_for(future, timeout)
-        except concurrent.futures.TimeoutError:
-            pass
-        finally:
-            cancel_event.set()
-
-        raise TimeoutError
+        return asyncio.wait_for(get_message(), timeout)
 
 
 class WebsocketClient:
     websocket = None
     messages = WebsocketMessages()
-    receiver_future = None
-    cancel_event = asyncio.Event()
 
     def __init__(self, message_handler):
         self.handle_message = message_handler
@@ -70,33 +55,37 @@ class WebsocketClient:
         self.websocket = await websockets.connect(
             constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN)
         logger.debug("Websocket connected")
+        self._start_receiver()
 
-    async def start_receiving(self):
-        def receiver():
+    async def shutdown(self):
+        if self.websocket.open:
+            logger.debug("Closing websocket server")
+            await self.websocket.close()
+
+    def _start_receiver(self):
+        async def receiver():
             while True:
-                if self.cancel_event.is_set():
+                if not self.websocket or not self.websocket.open:
+                    logger.debug("receiver returned: no ws/connection closed")
                     return
-                if not self.websocket.messages:
+
+                if not self.websocket.messages or self.websocket.closed:
+                    await asyncio.sleep(0)
                     continue
+
                 raw_message = self.websocket.messages.pop()
                 try:
                     message = WebsocketMessage.from_encoded(raw_message)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.warning("Ignored error decoding message: %s", exc)
+                    await asyncio.sleep(0)
                     continue
+
                 logger.debug("Received WS message with tag %s", message.tag)
                 self.messages.add(message.tag, message.data)
 
-        loop = asyncio.get_event_loop()
-        self.receiver_future = loop.run_in_executor(None, receiver)
-        logger.debug("Executed receiver func in executor")
-
-    async def stop_receiving(self):
-        if self.receiver_future:
-            self.cancel_event.set()
-            asyncio.ensure_future(self.receiver_future)
-            logger.debug("Stopped websocket receiver")
-        return
+        asyncio.ensure_future(receiver())
+        logger.debug("Executed receiver coroutine")
 
     async def send_message(self, message: WebsocketMessage):
         logger.debug("Sending a WS message with tag %s", message.tag)
