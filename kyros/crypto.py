@@ -13,10 +13,12 @@ def validate_secrets(secret, shared_secret_expanded):
                                 secret[:32] + secret[64:],
                                 Crypto.Hash.SHA256).digest() == secret[32:64]
 
+
 def sign_with_mac(message, mac_key):
     h = Crypto.Hash.HMAC.new(mac_key, digestmod=Crypto.Hash.SHA256)
     h.update(message)
     return h.digest()
+
 
 def aes_pad(s):
     bs = Crypto.Cipher.AES.block_size
