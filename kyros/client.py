@@ -18,7 +18,7 @@ class Client:
         instance.load_profile(constants.CLIENT_VERSION,
                               constants.CLIENT_LONG_DESC,
                               constants.CLIENT_SHORT_DESC)
-        logger.debug("Kyros instance created")
+        logger.info("Kyros instance created")
         return instance
 
     def __init__(self):
@@ -34,9 +34,9 @@ class Client:
     async def setup_ws(self):
         self.websocket = websocket.WebsocketClient(self.message_handler)
         await self.websocket.connect()
-        await self.websocket.start_receiving()
 
     def load_profile(self, ver, long_desc, short_desc):
+        logger.debug("Loaded new profile")
         self.profile = {
             "version": ver,
             "long_description": long_desc,
@@ -55,7 +55,8 @@ class Client:
 
         resp = await self.websocket.messages.get(init_message.tag)
         if resp["status"] != 200:
-            raise exceptions.LoginError(f"resp: {resp}")
+            logger.error("unexpected init stts code, resp:%s", resp)
+            raise exceptions.StatusCodeError(resp["status"])
 
         self.session.server_id = resp["ref"]
 
@@ -63,7 +64,7 @@ class Client:
         await self.send_init()
 
         async def wait_qr_scan():
-            ws_message = await self.websocket.messages.get("s1")
+            ws_message = await self.websocket.messages.get("s1", 20)
             connection_data = ws_message[1]
 
             self.phone_info = connection_data["phone"]
@@ -100,8 +101,94 @@ class Client:
         ]
         qr_data = ",".join(qr_fragments)
 
-        return qr_data, asyncio.wait_for(wait_qr_scan(), 20)
+        return qr_data, wait_qr_scan()
+
+    async def restore_session(self, new_session=None):  # noqa: mc0001
+        old_session = self.session
+        if new_session:
+            self.session = new_session
+
+        try:
+            await self.send_init()
+        except exceptions.StatusCodeError as exc:
+            logger.error("Restore session init responded with %d", exc.code)
+            return False
+        except asyncio.TimeoutError:
+            logger.error("Restore session init timed out")
+            return False
+
+        login_message = websocket.WebsocketMessage(None, [
+            "admin", "login", self.session.client_token,
+            self.session.server_token, self.session.client_id, "takeover"
+        ])
+        await self.websocket.send_message(login_message)
+
+        s1_message = None
+        try:
+            s1_message = await self.websocket.messages.get("s1")
+        except asyncio.TimeoutError:
+            logger.error("s1 message timed out")
+            try:
+                login_resp = await self.websocket.messages.get(
+                    login_message.tag)
+            except asyncio.TimeoutError:
+                logger.error("login message timeout")
+                return False
+            if login_resp["status"] != 200:
+                logger.error("login message responded %d",
+                             login_resp["status"])
+                return False
+
+        if len(s1_message) == 2 and s1_message[0] == "Cmd" \
+                and s1_message[1]["type"] == "challenge":
+            if not self.resolve_challenge(s1_message["challenge"]):
+                logger.error("failed to solve challenge")
+                return False
+            
+        # THIS IS MY LAST WORKING POINT, STILL INCOMPLETE
+        
+        try:
+            login_resp = await self.websocket.messages.get(login_message.tag)
+        except asyncio.TimeoutError:
+            logger.error("timeout w")
+
+        self.session = old_session
+        return True
+
+    async def resolve_challenge(self, challenge):
+        challenge = base64.b64decode(challenge.encode()).decode()
+        signed = crypto.sign_with_mac(challenge, self.session.mac_key)
+        chall_reply_message = websocket.WebsocketMessage(
+            None, [
+                "admin", "challenge",
+                base64.b64encode(signed).decode(), self.session.server_token,
+                self.session.client_id
+            ])
+        await self.websocket.send_message(chall_reply_message)
+
+        try:
+            status = self.websocket.messages.get(chall_reply_message)["status"]
+        except asyncio.TimeoutError:
+            logger.error("timeout waiting for chall resolve")
+            return False
+
+        if status != 200:
+            logger.error("chall resolve responded with %d", status)
+            return False
+
+        return True
+
+    async def safe_run(self, func, *args, **kwargs):
+        try:
+            return None, func(*args, **kwargs)
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.error("Exception %s raised at %s", exc, func.__name__)
+            return exc, None
+
+    async def logout(self):
+        self.websocket.send_message(
+            websocket.WebsocketMessage(None, ["admin", "Conn", "disconnect"]))
 
     async def shutdown(self):
-        await self.websocket.stop_receiving()
-        await self.websocket.websocket.close()
+        logger.info("Shutting down")
+        await self.websocket.shutdown()
