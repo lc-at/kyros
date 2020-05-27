@@ -6,6 +6,7 @@ class Session:
     server_id = None
 
     client_token = None
+    server_token = None
     client_secret = None
 
     secret = None
