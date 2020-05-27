@@ -144,9 +144,9 @@ class Client:
             if not self.resolve_challenge(s1_message["challenge"]):
                 logger.error("failed to solve challenge")
                 return False
-            
+
         # THIS IS MY LAST WORKING POINT, STILL INCOMPLETE
-        
+
         try:
             login_resp = await self.websocket.messages.get(login_message.tag)
         except asyncio.TimeoutError:
