@@ -38,7 +38,7 @@ class WebsocketMessages:
                 await asyncio.sleep(0)
             return self.messages[tag]
 
-        logger.debug("Getting message with tag %s (in executor)", tag)
+        logger.debug("Getting message with tag %s", tag)
 
         return asyncio.wait_for(get_message(), timeout)
 
