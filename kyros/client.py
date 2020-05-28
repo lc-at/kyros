@@ -108,56 +108,58 @@ class Client:
         if new_session:
             self.session = new_session
 
-        try:
+        async def restore():
             await self.send_init()
-        except exceptions.StatusCodeError as exc:
-            logger.error("Restore session init responded with %d", exc.code)
-            return False
-        except asyncio.TimeoutError:
-            logger.error("Restore session init timed out")
-            return False
 
-        login_message = websocket.WebsocketMessage(None, [
-            "admin", "login", self.session.client_token,
-            self.session.server_token, self.session.client_id, "takeover"
-        ])
-        await self.websocket.send_message(login_message)
+            login_message = websocket.WebsocketMessage(None, [
+                "admin", "login", self.session.client_token,
+                self.session.server_token, self.session.client_id, "takeover"
+            ])
+            await self.websocket.send_message(login_message)
 
-        s1_message = None
-        try:
-            s1_message = await self.websocket.messages.get("s1")
-        except asyncio.TimeoutError:
-            logger.error("s1 message timed out")
+            s1_message = None
             try:
+                s1_message = await self.websocket.messages.get("s1")
+            except asyncio.TimeoutError:
+                logger.error("s1 message timed out")
+
                 login_resp = await self.websocket.messages.get(
                     login_message.tag)
-            except asyncio.TimeoutError:
-                logger.error("login message timeout")
-                return False
+                if login_resp["status"] != 200:
+                    raise exceptions.StatusCodeError(login_resp["status"])
+                self.websocket.messages.add(login_message.tag, login_resp)
+
+            s2_message = None
+            if len(s1_message) == 2 and s1_message[0] == "Cmd" \
+                    and s1_message[1]["type"] == "challenge":
+                if not self.resolve_challenge(s1_message["challenge"]):
+                    logger.error("failed to solve challenge")
+                    return False
+
+                s2_message = self.websocket.messages.get("s2")
+
+            login_resp = await self.websocket.messages.get(login_message.tag)
             if login_resp["status"] != 200:
-                logger.error("login message responded %d",
-                             login_resp["status"])
-                return False
+                raise exceptions.StatusCodeError(login_resp["status"])
 
-        if len(s1_message) == 2 and s1_message[0] == "Cmd" \
-                and s1_message[1]["type"] == "challenge":
-            if not self.resolve_challenge(s1_message["challenge"]):
-                logger.error("failed to solve challenge")
-                return False
-
-        # THIS IS MY LAST WORKING POINT, STILL INCOMPLETE
+            conn_resp = s2_message if s2_message else s1_message
+            self.phone_info = conn_resp["phone"]
+            self.session.wid = conn_resp["wid"]
+            self.session.client_token = conn_resp["clientToken"]
+            self.session.server_token = conn_resp["serverToken"]
+            return self.session
 
         try:
-            login_resp = await self.websocket.messages.get(login_message.tag)
-        except asyncio.TimeoutError:
-            logger.error("timeout w")
-
-        self.session = old_session
-        return True
+            return await restore()
+        except Exception:  # pylint: disable=broad-except
+            if old_session:
+                self.session = old_session
+            raise
 
     async def resolve_challenge(self, challenge):
         challenge = base64.b64decode(challenge.encode()).decode()
         signed = crypto.sign_with_mac(challenge, self.session.mac_key)
+
         chall_reply_message = websocket.WebsocketMessage(
             None, [
                 "admin", "challenge",
@@ -166,27 +168,24 @@ class Client:
             ])
         await self.websocket.send_message(chall_reply_message)
 
-        try:
-            status = self.websocket.messages.get(chall_reply_message)["status"]
-        except asyncio.TimeoutError:
-            logger.error("timeout waiting for chall resolve")
-            return False
-
+        status = self.websocket.messages.get(chall_reply_message)["status"]
         if status != 200:
-            logger.error("chall resolve responded with %d", status)
-            return False
+            raise exceptions.StatusCodeError(status)
 
         return True
 
-    async def safe_run(self, func, *args, **kwargs):
+    async def ensure_safe(self, func, *args, **kwargs):
         try:
-            return None, func(*args, **kwargs)
+            return_value = func(*args, **kwargs)
+            if asyncio.iscoroutine(return_value):
+                return None, await return_value
+            return None, return_value
         except Exception as exc:  # pylint: disable=broad-except
             logger.error("Exception %s raised at %s", exc, func.__name__)
             return exc, None
 
     async def logout(self):
-        self.websocket.send_message(
+        await self.websocket.send_message(
             websocket.WebsocketMessage(None, ["admin", "Conn", "disconnect"]))
 
     async def shutdown(self):
