@@ -20,8 +20,9 @@ Already done:
 - Session management (basic things like import and export from a file)
 
 Currently doing:
-- Session restoration
-- Read from existing session
+- Session restoration (untested)
+- Read from existing session (untested)
+- Decrypting messages
 
 To-do:
 - Decrypting messages
