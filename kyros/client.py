@@ -34,6 +34,7 @@ class Client:
     async def setup_ws(self):
         self.websocket = websocket.WebsocketClient(self.message_handler)
         await self.websocket.connect()
+        self.websocket.load_session(self.session)
 
     def load_profile(self, ver, long_desc, short_desc):
         logger.debug("Loaded new profile")
@@ -147,6 +148,9 @@ class Client:
             self.session.wid = conn_resp["wid"]
             self.session.client_token = conn_resp["clientToken"]
             self.session.server_token = conn_resp["serverToken"]
+
+            self.websocket.load_session(self.session)  # reload references
+
             return self.session
 
         try:
