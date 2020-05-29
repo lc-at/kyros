@@ -18,14 +18,14 @@ Already done:
 - Key generation
 - Logging out
 - Session management (basic things like import and export from a file)
+- Decrypting messages
 
 Currently doing:
 - Session restoration (untested)
 - Read from existing session (untested)
-- Decrypting messages
 
 To-do:
-- Decrypting messages
+- Implementation of binary reader (encoder/decoder)
 - Encrypting messages
 - Reading messages
 - Sending messages
