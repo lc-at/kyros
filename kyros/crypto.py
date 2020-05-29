@@ -14,6 +14,10 @@ def validate_secrets(secret, shared_secret_expanded):
                                 Crypto.Hash.SHA256).digest() == secret[32:64]
 
 
+def hmac_sha256(mac, message):
+    return Crypto.Hash.HMAC.new(mac, message, Crypto.Hash.SHA256).digest()
+
+
 def sign_with_mac(message, mac_key):
     h = Crypto.Hash.HMAC.new(mac_key, digestmod=Crypto.Hash.SHA256)
     h.update(message)
