@@ -6,7 +6,8 @@ import pyqrcode
 
 import kyros
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig()
+logging.getLogger("kyros").setLevel(logging.DEBUG)
 
 
 async def amain():
@@ -19,7 +20,9 @@ async def amain():
     except asyncio.TimeoutError:
         await whatsapp.shutdown()
         return
+    await asyncio.sleep(5)
     await whatsapp.logout()
+    breakpoint()
 
 
 if __name__ == "__main__":
