@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.1" />
+<title>kyros.client API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>kyros.client</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from __future__ import annotations
+
+import asyncio
+import base64
+import logging
+from typing import Any, Awaitable, Callable, Sequence, Union
+
+import donna25519
+
+from . import (constants, crypto, exceptions, message, session, utilities,
+               websocket)
+
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+
+class Client:
+    &#34;&#34;&#34;This class is the wrapper for WhatsApp Web.
+    Errors mainly shown as log messages (using `logging`).
+    Some methods might raise an exception that will interrupt the
+    whole session. Please make sure to catch any exception thrown.
+    You might want to use the `Client.ensure_safe` method.
+    Please note that some exceptions should not be ignored as it might
+    be important (example: a timeout error when sending a message will
+    result in the failing of message delivery). A much better and pythonic
+    way to handle and raise exception is still a pending task.&#34;&#34;&#34;
+    @classmethod
+    async def create(cls) -&gt; Client:
+        &#34;&#34;&#34;The proper way to instantiate `Client` class. Connects to
+        websocket server, also sets up the default client profile.
+        Returns a ready to use `Client` instance.&#34;&#34;&#34;
+        instance = cls()
+        await instance.setup_ws()
+        instance.load_profile(constants.CLIENT_VERSION,
+                              constants.CLIENT_LONG_DESC,
+                              constants.CLIENT_SHORT_DESC)
+        logger.info(&#34;Kyros instance created&#34;)
+        return instance
+
+    def __init__(self) -&gt; None:
+        &#34;&#34;&#34;Initiate class. Do not initiate this way, use `Client.create()`
+        instead.&#34;&#34;&#34;
+        self.profile = None
+        self.message_handler = message.MessageHandler()
+        self.session = session.Session()
+        self.session.client_id = utilities.generate_client_id()
+        self.session.private_key = donna25519.PrivateKey()
+        self.session.public_key = self.session.private_key.get_public()
+        self.phone_info = {}
+        self.websocket = None
+
+    async def setup_ws(self) -&gt; None:
+        &#34;&#34;&#34;Connect to websocket server.&#34;&#34;&#34;
+        self.websocket = websocket.WebsocketClient(self.message_handler)
+        await self.websocket.connect()
+        self.websocket.load_session(self.session)
+
+    def load_profile(self, ver: Sequence[Union[float, int]], long_desc: str,
+                     short_desc: str) -&gt; None:
+        &#34;&#34;&#34;Loads a new client profile (which will be shown in the WhatsApp
+        mobile app). Please note that the client profile is unchangeable after
+        logging in (after admin init).&#34;&#34;&#34;
+        logger.debug(&#34;Loaded new profile&#34;)
+        self.profile = {
+            &#34;version&#34;: ver,
+            &#34;long_description&#34;: long_desc,
+            &#34;short_description&#34;: short_desc,
+        }
+
+    async def send_init(self) -&gt; None:
+        &#34;&#34;&#34;Send an admin init message. Usually not used directly. Used whens
+        doing QR login or restoring session.&#34;&#34;&#34;
+        init_message = websocket.WebsocketMessage(None, [
+            &#34;admin&#34;, &#34;init&#34;, self.profile[&#34;version&#34;],
+            [
+                self.profile[&#34;long_description&#34;],
+                self.profile[&#34;short_description&#34;]
+            ], self.session.client_id, True
+        ])
+        await self.websocket.send_message(init_message)
+
+        resp = await self.websocket.messages.get(init_message.tag)
+        if resp[&#34;status&#34;] != 200:
+            logger.error(&#34;unexpected init stts code, resp:%s&#34;, resp)
+            raise exceptions.StatusCodeError(resp[&#34;status&#34;])
+
+        self.session.server_id = resp[&#34;ref&#34;]
+
+    async def qr_login(self) -&gt; (str, Awaitable):
+        &#34;&#34;&#34;Does a QR login. Sends init then return the qr data
+        which will be shown using `pyqrcode` or another library and.
+        also returns a waitable which will timeout in 20 seconds.
+        20 seconds is the maximum amount of time for the QR code to be
+        considered valid.
+        Raises `asyncio.TimeoutError` if timeout reached.
+        Another exception might also possible.&#34;&#34;&#34;
+        await self.send_init()
+
+        async def wait_qr_scan():
+            ws_message = await self.websocket.messages.get(&#34;s1&#34;, 20)
+            connection_data = ws_message[1]
+
+            self.phone_info = connection_data[&#34;phone&#34;]
+            self.session.secret = base64.b64decode(
+                connection_data[&#34;secret&#34;].encode())
+            self.session.server_token = connection_data[&#34;serverToken&#34;]
+            self.session.client_token = connection_data[&#34;clientToken&#34;]
+            self.session.browser_token = connection_data[&#34;browserToken&#34;]
+            self.session.wid = connection_data[&#34;wid&#34;]
+
+            self.session.shared_secret = self.session.private_key.do_exchange(
+                donna25519.PublicKey(self.session.secret[:32]))
+            self.session.shared_secret_expanded = crypto.hkdf_expand(
+                self.session.shared_secret, 80)
+
+            if not crypto.validate_secrets(
+                    self.session.secret, self.session.shared_secret_expanded):
+                raise exceptions.HMACValidationError
+
+            self.session.keys_encrypted = self.session.shared_secret_expanded[
+                64:] + self.session.secret[64:]
+            self.session.keys_decrypted = crypto.aes_decrypt(
+                self.session.shared_secret_expanded[:32],
+                self.session.keys_encrypted)
+
+            self.session.enc_key = self.session.keys_decrypted[:32]
+            self.session.mac_key = self.session.keys_decrypted[32:64]
+            print(self.session.enc_key, self.session.mac_key)
+
+        qr_fragments = [
+            self.session.server_id,
+            base64.b64encode(self.session.public_key.public).decode(),
+            self.session.client_id
+        ]
+        qr_data = &#34;,&#34;.join(qr_fragments)
+
+        return qr_data, wait_qr_scan()
+
+    async def restore_session(  # noqa: mc0001
+            self, new_session: session.Session = None) -&gt; session.Session:
+        &#34;&#34;&#34;Restores a session. Returns the new session object.
+        If `new_session` argument specified, replace current session with
+        the new one.
+        Raises asyncio.TimeoutError when a websocket request reaches timeout.
+        Old session is restored when it fails restoring the new one.&#34;&#34;&#34;
+        old_session = self.session
+        if new_session:
+            self.session = new_session
+
+        async def restore():
+            await self.send_init()
+
+            login_message = websocket.WebsocketMessage(None, [
+                &#34;admin&#34;, &#34;login&#34;, self.session.client_token,
+                self.session.server_token, self.session.client_id, &#34;takeover&#34;
+            ])
+            await self.websocket.send_message(login_message)
+
+            s1_message = None
+            try:
+                s1_message = await self.websocket.messages.get(&#34;s1&#34;)
+            except asyncio.TimeoutError:
+                logger.error(&#34;s1 message timed out&#34;)
+
+                login_resp = await self.websocket.messages.get(
+                    login_message.tag)
+                if login_resp[&#34;status&#34;] != 200:
+                    raise exceptions.StatusCodeError(login_resp[&#34;status&#34;])
+                self.websocket.messages.add(login_message.tag, login_resp)
+
+            s2_message = None
+            if len(s1_message) == 2 and s1_message[0] == &#34;Cmd&#34; \
+                    and s1_message[1][&#34;type&#34;] == &#34;challenge&#34;:
+                if not self.resolve_challenge(s1_message[&#34;challenge&#34;]):
+                    logger.error(&#34;failed to solve challenge&#34;)
+                    return False
+
+                s2_message = self.websocket.messages.get(&#34;s2&#34;)
+
+            login_resp = await self.websocket.messages.get(login_message.tag)
+            if login_resp[&#34;status&#34;] != 200:
+                raise exceptions.StatusCodeError(login_resp[&#34;status&#34;])
+
+            conn_resp = s2_message if s2_message else s1_message
+            self.phone_info = conn_resp[&#34;phone&#34;]
+            self.session.wid = conn_resp[&#34;wid&#34;]
+            self.session.client_token = conn_resp[&#34;clientToken&#34;]
+            self.session.server_token = conn_resp[&#34;serverToken&#34;]
+
+            self.websocket.load_session(self.session)  # reload references
+
+            return self.session
+
+        try:
+            return await restore()
+        except Exception:  # pylint: disable=broad-except
+            if old_session:
+                self.session = old_session
+            raise
+
+    async def resolve_challenge(self, challenge: str) -&gt; None:
+        &#34;&#34;&#34;Resolve a challenge string. Sings challenge with mac_key and send
+        a challenge response ws message. Usually called when restoring session.
+        Raises `asyncio.TimeoutError` when timeout reached.&#34;&#34;&#34;
+        challenge = base64.b64decode(challenge.encode()).decode()
+        signed = crypto.hmac_sha256(self.session.mac_key, challenge)
+
+        chall_reply_message = websocket.WebsocketMessage(
+            None, [
+                &#34;admin&#34;, &#34;challenge&#34;,
+                base64.b64encode(signed).decode(), self.session.server_token,
+                self.session.client_id
+            ])
+        await self.websocket.send_message(chall_reply_message)
+
+        status = self.websocket.messages.get(chall_reply_message)[&#34;status&#34;]
+        if status != 200:
+            raise exceptions.StatusCodeError(status)
+
+        return
+
+    async def ensure_safe(self, func: Callable, *args: Any,
+                          **kwargs: Any) -&gt; (Union[None, Exception], Any):
+        &#34;&#34;&#34;A function intended to be used to run another function without
+        raising any exception. Returns an exception as first element of
+        the tuple if available. Also returns the result of the function call
+        as the second element of the tuple if no exceptions raised. If `func`
+        is a coroutine function, this function returns the awaited result.
+        &#34;&#34;&#34;
+        try:
+            return_value = func(*args, **kwargs)
+            if asyncio.iscoroutine(return_value):
+                return None, await return_value
+            return None, return_value
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.error(&#34;Exception %s raised at %s&#34;, exc, func.__name__)
+            return exc, None
+
+    async def logout(self) -&gt; None:
+        &#34;&#34;&#34;Sends a logout message to the websocket server. This will
+        invalidate the session.&#34;&#34;&#34;
+        await self.websocket.send_message(
+            websocket.WebsocketMessage(None, [&#34;admin&#34;, &#34;Conn&#34;, &#34;disconnect&#34;]))
+
+    async def shutdown(self) -&gt; None:
+        &#34;&#34;&#34;Do a cleanup. Closes websocket connection.&#34;&#34;&#34;
+        logger.info(&#34;Shutting down&#34;)
+        await self.websocket.shutdown()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="kyros.client.Client"><code class="flex name class">
+<span>class <span class="ident">Client</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class is the wrapper for WhatsApp Web.
+Errors mainly shown as log messages (using <code>logging</code>).
+Some methods might raise an exception that will interrupt the
+whole session. Please make sure to catch any exception thrown.
+You might want to use the <code><a title="kyros.client.Client.ensure_safe" href="#kyros.client.Client.ensure_safe">Client.ensure_safe()</a></code> method.
+Please note that some exceptions should not be ignored as it might
+be important (example: a timeout error when sending a message will
+result in the failing of message delivery). A much better and pythonic
+way to handle and raise exception is still a pending task.</p>
+<p>Initiate class. Do not initiate this way, use <code><a title="kyros.client.Client.create" href="#kyros.client.Client.create">Client.create()</a></code>
+instead.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Client:
+    &#34;&#34;&#34;This class is the wrapper for WhatsApp Web.
+    Errors mainly shown as log messages (using `logging`).
+    Some methods might raise an exception that will interrupt the
+    whole session. Please make sure to catch any exception thrown.
+    You might want to use the `Client.ensure_safe` method.
+    Please note that some exceptions should not be ignored as it might
+    be important (example: a timeout error when sending a message will
+    result in the failing of message delivery). A much better and pythonic
+    way to handle and raise exception is still a pending task.&#34;&#34;&#34;
+    @classmethod
+    async def create(cls) -&gt; Client:
+        &#34;&#34;&#34;The proper way to instantiate `Client` class. Connects to
+        websocket server, also sets up the default client profile.
+        Returns a ready to use `Client` instance.&#34;&#34;&#34;
+        instance = cls()
+        await instance.setup_ws()
+        instance.load_profile(constants.CLIENT_VERSION,
+                              constants.CLIENT_LONG_DESC,
+                              constants.CLIENT_SHORT_DESC)
+        logger.info(&#34;Kyros instance created&#34;)
+        return instance
+
+    def __init__(self) -&gt; None:
+        &#34;&#34;&#34;Initiate class. Do not initiate this way, use `Client.create()`
+        instead.&#34;&#34;&#34;
+        self.profile = None
+        self.message_handler = message.MessageHandler()
+        self.session = session.Session()
+        self.session.client_id = utilities.generate_client_id()
+        self.session.private_key = donna25519.PrivateKey()
+        self.session.public_key = self.session.private_key.get_public()
+        self.phone_info = {}
+        self.websocket = None
+
+    async def setup_ws(self) -&gt; None:
+        &#34;&#34;&#34;Connect to websocket server.&#34;&#34;&#34;
+        self.websocket = websocket.WebsocketClient(self.message_handler)
+        await self.websocket.connect()
+        self.websocket.load_session(self.session)
+
+    def load_profile(self, ver: Sequence[Union[float, int]], long_desc: str,
+                     short_desc: str) -&gt; None:
+        &#34;&#34;&#34;Loads a new client profile (which will be shown in the WhatsApp
+        mobile app). Please note that the client profile is unchangeable after
+        logging in (after admin init).&#34;&#34;&#34;
+        logger.debug(&#34;Loaded new profile&#34;)
+        self.profile = {
+            &#34;version&#34;: ver,
+            &#34;long_description&#34;: long_desc,
+            &#34;short_description&#34;: short_desc,
+        }
+
+    async def send_init(self) -&gt; None:
+        &#34;&#34;&#34;Send an admin init message. Usually not used directly. Used whens
+        doing QR login or restoring session.&#34;&#34;&#34;
+        init_message = websocket.WebsocketMessage(None, [
+            &#34;admin&#34;, &#34;init&#34;, self.profile[&#34;version&#34;],
+            [
+                self.profile[&#34;long_description&#34;],
+                self.profile[&#34;short_description&#34;]
+            ], self.session.client_id, True
+        ])
+        await self.websocket.send_message(init_message)
+
+        resp = await self.websocket.messages.get(init_message.tag)
+        if resp[&#34;status&#34;] != 200:
+            logger.error(&#34;unexpected init stts code, resp:%s&#34;, resp)
+            raise exceptions.StatusCodeError(resp[&#34;status&#34;])
+
+        self.session.server_id = resp[&#34;ref&#34;]
+
+    async def qr_login(self) -&gt; (str, Awaitable):
+        &#34;&#34;&#34;Does a QR login. Sends init then return the qr data
+        which will be shown using `pyqrcode` or another library and.
+        also returns a waitable which will timeout in 20 seconds.
+        20 seconds is the maximum amount of time for the QR code to be
+        considered valid.
+        Raises `asyncio.TimeoutError` if timeout reached.
+        Another exception might also possible.&#34;&#34;&#34;
+        await self.send_init()
+
+        async def wait_qr_scan():
+            ws_message = await self.websocket.messages.get(&#34;s1&#34;, 20)
+            connection_data = ws_message[1]
+
+            self.phone_info = connection_data[&#34;phone&#34;]
+            self.session.secret = base64.b64decode(
+                connection_data[&#34;secret&#34;].encode())
+            self.session.server_token = connection_data[&#34;serverToken&#34;]
+            self.session.client_token = connection_data[&#34;clientToken&#34;]
+            self.session.browser_token = connection_data[&#34;browserToken&#34;]
+            self.session.wid = connection_data[&#34;wid&#34;]
+
+            self.session.shared_secret = self.session.private_key.do_exchange(
+                donna25519.PublicKey(self.session.secret[:32]))
+            self.session.shared_secret_expanded = crypto.hkdf_expand(
+                self.session.shared_secret, 80)
+
+            if not crypto.validate_secrets(
+                    self.session.secret, self.session.shared_secret_expanded):
+                raise exceptions.HMACValidationError
+
+            self.session.keys_encrypted = self.session.shared_secret_expanded[
+                64:] + self.session.secret[64:]
+            self.session.keys_decrypted = crypto.aes_decrypt(
+                self.session.shared_secret_expanded[:32],
+                self.session.keys_encrypted)
+
+            self.session.enc_key = self.session.keys_decrypted[:32]
+            self.session.mac_key = self.session.keys_decrypted[32:64]
+            print(self.session.enc_key, self.session.mac_key)
+
+        qr_fragments = [
+            self.session.server_id,
+            base64.b64encode(self.session.public_key.public).decode(),
+            self.session.client_id
+        ]
+        qr_data = &#34;,&#34;.join(qr_fragments)
+
+        return qr_data, wait_qr_scan()
+
+    async def restore_session(  # noqa: mc0001
+            self, new_session: session.Session = None) -&gt; session.Session:
+        &#34;&#34;&#34;Restores a session. Returns the new session object.
+        If `new_session` argument specified, replace current session with
+        the new one.
+        Raises asyncio.TimeoutError when a websocket request reaches timeout.
+        Old session is restored when it fails restoring the new one.&#34;&#34;&#34;
+        old_session = self.session
+        if new_session:
+            self.session = new_session
+
+        async def restore():
+            await self.send_init()
+
+            login_message = websocket.WebsocketMessage(None, [
+                &#34;admin&#34;, &#34;login&#34;, self.session.client_token,
+                self.session.server_token, self.session.client_id, &#34;takeover&#34;
+            ])
+            await self.websocket.send_message(login_message)
+
+            s1_message = None
+            try:
+                s1_message = await self.websocket.messages.get(&#34;s1&#34;)
+            except asyncio.TimeoutError:
+                logger.error(&#34;s1 message timed out&#34;)
+
+                login_resp = await self.websocket.messages.get(
+                    login_message.tag)
+                if login_resp[&#34;status&#34;] != 200:
+                    raise exceptions.StatusCodeError(login_resp[&#34;status&#34;])
+                self.websocket.messages.add(login_message.tag, login_resp)
+
+            s2_message = None
+            if len(s1_message) == 2 and s1_message[0] == &#34;Cmd&#34; \
+                    and s1_message[1][&#34;type&#34;] == &#34;challenge&#34;:
+                if not self.resolve_challenge(s1_message[&#34;challenge&#34;]):
+                    logger.error(&#34;failed to solve challenge&#34;)
+                    return False
+
+                s2_message = self.websocket.messages.get(&#34;s2&#34;)
+
+            login_resp = await self.websocket.messages.get(login_message.tag)
+            if login_resp[&#34;status&#34;] != 200:
+                raise exceptions.StatusCodeError(login_resp[&#34;status&#34;])
+
+            conn_resp = s2_message if s2_message else s1_message
+            self.phone_info = conn_resp[&#34;phone&#34;]
+            self.session.wid = conn_resp[&#34;wid&#34;]
+            self.session.client_token = conn_resp[&#34;clientToken&#34;]
+            self.session.server_token = conn_resp[&#34;serverToken&#34;]
+
+            self.websocket.load_session(self.session)  # reload references
+
+            return self.session
+
+        try:
+            return await restore()
+        except Exception:  # pylint: disable=broad-except
+            if old_session:
+                self.session = old_session
+            raise
+
+    async def resolve_challenge(self, challenge: str) -&gt; None:
+        &#34;&#34;&#34;Resolve a challenge string. Sings challenge with mac_key and send
+        a challenge response ws message. Usually called when restoring session.
+        Raises `asyncio.TimeoutError` when timeout reached.&#34;&#34;&#34;
+        challenge = base64.b64decode(challenge.encode()).decode()
+        signed = crypto.hmac_sha256(self.session.mac_key, challenge)
+
+        chall_reply_message = websocket.WebsocketMessage(
+            None, [
+                &#34;admin&#34;, &#34;challenge&#34;,
+                base64.b64encode(signed).decode(), self.session.server_token,
+                self.session.client_id
+            ])
+        await self.websocket.send_message(chall_reply_message)
+
+        status = self.websocket.messages.get(chall_reply_message)[&#34;status&#34;]
+        if status != 200:
+            raise exceptions.StatusCodeError(status)
+
+        return
+
+    async def ensure_safe(self, func: Callable, *args: Any,
+                          **kwargs: Any) -&gt; (Union[None, Exception], Any):
+        &#34;&#34;&#34;A function intended to be used to run another function without
+        raising any exception. Returns an exception as first element of
+        the tuple if available. Also returns the result of the function call
+        as the second element of the tuple if no exceptions raised. If `func`
+        is a coroutine function, this function returns the awaited result.
+        &#34;&#34;&#34;
+        try:
+            return_value = func(*args, **kwargs)
+            if asyncio.iscoroutine(return_value):
+                return None, await return_value
+            return None, return_value
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.error(&#34;Exception %s raised at %s&#34;, exc, func.__name__)
+            return exc, None
+
+    async def logout(self) -&gt; None:
+        &#34;&#34;&#34;Sends a logout message to the websocket server. This will
+        invalidate the session.&#34;&#34;&#34;
+        await self.websocket.send_message(
+            websocket.WebsocketMessage(None, [&#34;admin&#34;, &#34;Conn&#34;, &#34;disconnect&#34;]))
+
+    async def shutdown(self) -&gt; None:
+        &#34;&#34;&#34;Do a cleanup. Closes websocket connection.&#34;&#34;&#34;
+        logger.info(&#34;Shutting down&#34;)
+        await self.websocket.shutdown()</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="kyros.client.Client.create"><code class="name flex">
+<span>async def <span class="ident">create</span></span>(<span>) -> <a title="kyros.client.Client" href="#kyros.client.Client">Client</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>The proper way to instantiate <code><a title="kyros.client.Client" href="#kyros.client.Client">Client</a></code> class. Connects to
+websocket server, also sets up the default client profile.
+Returns a ready to use <code><a title="kyros.client.Client" href="#kyros.client.Client">Client</a></code> instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+async def create(cls) -&gt; Client:
+    &#34;&#34;&#34;The proper way to instantiate `Client` class. Connects to
+    websocket server, also sets up the default client profile.
+    Returns a ready to use `Client` instance.&#34;&#34;&#34;
+    instance = cls()
+    await instance.setup_ws()
+    instance.load_profile(constants.CLIENT_VERSION,
+                          constants.CLIENT_LONG_DESC,
+                          constants.CLIENT_SHORT_DESC)
+    logger.info(&#34;Kyros instance created&#34;)
+    return instance</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="kyros.client.Client.ensure_safe"><code class="name flex">
+<span>async def <span class="ident">ensure_safe</span></span>(<span>self, func: Callable, *args: Any, **kwargs: Any) -> '(Union[None, Exception], Any)'</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A function intended to be used to run another function without
+raising any exception. Returns an exception as first element of
+the tuple if available. Also returns the result of the function call
+as the second element of the tuple if no exceptions raised. If <code>func</code>
+is a coroutine function, this function returns the awaited result.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def ensure_safe(self, func: Callable, *args: Any,
+                      **kwargs: Any) -&gt; (Union[None, Exception], Any):
+    &#34;&#34;&#34;A function intended to be used to run another function without
+    raising any exception. Returns an exception as first element of
+    the tuple if available. Also returns the result of the function call
+    as the second element of the tuple if no exceptions raised. If `func`
+    is a coroutine function, this function returns the awaited result.
+    &#34;&#34;&#34;
+    try:
+        return_value = func(*args, **kwargs)
+        if asyncio.iscoroutine(return_value):
+            return None, await return_value
+        return None, return_value
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.error(&#34;Exception %s raised at %s&#34;, exc, func.__name__)
+        return exc, None</code></pre>
+</details>
+</dd>
+<dt id="kyros.client.Client.load_profile"><code class="name flex">
+<span>def <span class="ident">load_profile</span></span>(<span>self, ver: Sequence[Union[float, int]], long_desc: str, short_desc: str) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Loads a new client profile (which will be shown in the WhatsApp
+mobile app). Please note that the client profile is unchangeable after
+logging in (after admin init).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_profile(self, ver: Sequence[Union[float, int]], long_desc: str,
+                 short_desc: str) -&gt; None:
+    &#34;&#34;&#34;Loads a new client profile (which will be shown in the WhatsApp
+    mobile app). Please note that the client profile is unchangeable after
+    logging in (after admin init).&#34;&#34;&#34;
+    logger.debug(&#34;Loaded new profile&#34;)
+    self.profile = {
+        &#34;version&#34;: ver,
+        &#34;long_description&#34;: long_desc,
+        &#34;short_description&#34;: short_desc,
+    }</code></pre>
+</details>
+</dd>
+<dt id="kyros.client.Client.logout"><code class="name flex">
+<span>async def <span class="ident">logout</span></span>(<span>self) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sends a logout message to the websocket server. This will
+invalidate the session.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def logout(self) -&gt; None:
+    &#34;&#34;&#34;Sends a logout message to the websocket server. This will
+    invalidate the session.&#34;&#34;&#34;
+    await self.websocket.send_message(
+        websocket.WebsocketMessage(None, [&#34;admin&#34;, &#34;Conn&#34;, &#34;disconnect&#34;]))</code></pre>
+</details>
+</dd>
+<dt id="kyros.client.Client.qr_login"><code class="name flex">
+<span>async def <span class="ident">qr_login</span></span>(<span>self) -> '(str, Awaitable)'</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Does a QR login. Sends init then return the qr data
+which will be shown using <code>pyqrcode</code> or another library and.
+also returns a waitable which will timeout in 20 seconds.
+20 seconds is the maximum amount of time for the QR code to be
+considered valid.
+Raises <code>asyncio.TimeoutError</code> if timeout reached.
+Another exception might also possible.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def qr_login(self) -&gt; (str, Awaitable):
+    &#34;&#34;&#34;Does a QR login. Sends init then return the qr data
+    which will be shown using `pyqrcode` or another library and.
+    also returns a waitable which will timeout in 20 seconds.
+    20 seconds is the maximum amount of time for the QR code to be
+    considered valid.
+    Raises `asyncio.TimeoutError` if timeout reached.
+    Another exception might also possible.&#34;&#34;&#34;
+    await self.send_init()
+
+    async def wait_qr_scan():
+        ws_message = await self.websocket.messages.get(&#34;s1&#34;, 20)
+        connection_data = ws_message[1]
+
+        self.phone_info = connection_data[&#34;phone&#34;]
+        self.session.secret = base64.b64decode(
+            connection_data[&#34;secret&#34;].encode())
+        self.session.server_token = connection_data[&#34;serverToken&#34;]
+        self.session.client_token = connection_data[&#34;clientToken&#34;]
+        self.session.browser_token = connection_data[&#34;browserToken&#34;]
+        self.session.wid = connection_data[&#34;wid&#34;]
+
+        self.session.shared_secret = self.session.private_key.do_exchange(
+            donna25519.PublicKey(self.session.secret[:32]))
+        self.session.shared_secret_expanded = crypto.hkdf_expand(
+            self.session.shared_secret, 80)
+
+        if not crypto.validate_secrets(
+                self.session.secret, self.session.shared_secret_expanded):
+            raise exceptions.HMACValidationError
+
+        self.session.keys_encrypted = self.session.shared_secret_expanded[
+            64:] + self.session.secret[64:]
+        self.session.keys_decrypted = crypto.aes_decrypt(
+            self.session.shared_secret_expanded[:32],
+            self.session.keys_encrypted)
+
+        self.session.enc_key = self.session.keys_decrypted[:32]
+        self.session.mac_key = self.session.keys_decrypted[32:64]
+        print(self.session.enc_key, self.session.mac_key)
+
+    qr_fragments = [
+        self.session.server_id,
+        base64.b64encode(self.session.public_key.public).decode(),
+        self.session.client_id
+    ]
+    qr_data = &#34;,&#34;.join(qr_fragments)
+
+    return qr_data, wait_qr_scan()</code></pre>
+</details>
+</dd>
+<dt id="kyros.client.Client.resolve_challenge"><code class="name flex">
+<span>async def <span class="ident">resolve_challenge</span></span>(<span>self, challenge: str) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resolve a challenge string. Sings challenge with mac_key and send
+a challenge response ws message. Usually called when restoring session.
+Raises <code>asyncio.TimeoutError</code> when timeout reached.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def resolve_challenge(self, challenge: str) -&gt; None:
+    &#34;&#34;&#34;Resolve a challenge string. Sings challenge with mac_key and send
+    a challenge response ws message. Usually called when restoring session.
+    Raises `asyncio.TimeoutError` when timeout reached.&#34;&#34;&#34;
+    challenge = base64.b64decode(challenge.encode()).decode()
+    signed = crypto.hmac_sha256(self.session.mac_key, challenge)
+
+    chall_reply_message = websocket.WebsocketMessage(
+        None, [
+            &#34;admin&#34;, &#34;challenge&#34;,
+            base64.b64encode(signed).decode(), self.session.server_token,
+            self.session.client_id
+        ])
+    await self.websocket.send_message(chall_reply_message)
+
+    status = self.websocket.messages.get(chall_reply_message)[&#34;status&#34;]
+    if status != 200:
+        raise exceptions.StatusCodeError(status)
+
+    return</code></pre>
+</details>
+</dd>
+<dt id="kyros.client.Client.restore_session"><code class="name flex">
+<span>async def <span class="ident">restore_session</span></span>(<span>self, new_session: session.Session = None) -> <a title="kyros.session.Session" href="session.html#kyros.session.Session">Session</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restores a session. Returns the new session object.
+If <code>new_session</code> argument specified, replace current session with
+the new one.
+Raises asyncio.TimeoutError when a websocket request reaches timeout.
+Old session is restored when it fails restoring the new one.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def restore_session(  # noqa: mc0001
+        self, new_session: session.Session = None) -&gt; session.Session:
+    &#34;&#34;&#34;Restores a session. Returns the new session object.
+    If `new_session` argument specified, replace current session with
+    the new one.
+    Raises asyncio.TimeoutError when a websocket request reaches timeout.
+    Old session is restored when it fails restoring the new one.&#34;&#34;&#34;
+    old_session = self.session
+    if new_session:
+        self.session = new_session
+
+    async def restore():
+        await self.send_init()
+
+        login_message = websocket.WebsocketMessage(None, [
+            &#34;admin&#34;, &#34;login&#34;, self.session.client_token,
+            self.session.server_token, self.session.client_id, &#34;takeover&#34;
+        ])
+        await self.websocket.send_message(login_message)
+
+        s1_message = None
+        try:
+            s1_message = await self.websocket.messages.get(&#34;s1&#34;)
+        except asyncio.TimeoutError:
+            logger.error(&#34;s1 message timed out&#34;)
+
+            login_resp = await self.websocket.messages.get(
+                login_message.tag)
+            if login_resp[&#34;status&#34;] != 200:
+                raise exceptions.StatusCodeError(login_resp[&#34;status&#34;])
+            self.websocket.messages.add(login_message.tag, login_resp)
+
+        s2_message = None
+        if len(s1_message) == 2 and s1_message[0] == &#34;Cmd&#34; \
+                and s1_message[1][&#34;type&#34;] == &#34;challenge&#34;:
+            if not self.resolve_challenge(s1_message[&#34;challenge&#34;]):
+                logger.error(&#34;failed to solve challenge&#34;)
+                return False
+
+            s2_message = self.websocket.messages.get(&#34;s2&#34;)
+
+        login_resp = await self.websocket.messages.get(login_message.tag)
+        if login_resp[&#34;status&#34;] != 200:
+            raise exceptions.StatusCodeError(login_resp[&#34;status&#34;])
+
+        conn_resp = s2_message if s2_message else s1_message
+        self.phone_info = conn_resp[&#34;phone&#34;]
+        self.session.wid = conn_resp[&#34;wid&#34;]
+        self.session.client_token = conn_resp[&#34;clientToken&#34;]
+        self.session.server_token = conn_resp[&#34;serverToken&#34;]
+
+        self.websocket.load_session(self.session)  # reload references
+
+        return self.session
+
+    try:
+        return await restore()
+    except Exception:  # pylint: disable=broad-except
+        if old_session:
+            self.session = old_session
+        raise</code></pre>
+</details>
+</dd>
+<dt id="kyros.client.Client.send_init"><code class="name flex">
+<span>async def <span class="ident">send_init</span></span>(<span>self) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Send an admin init message. Usually not used directly. Used whens
+doing QR login or restoring session.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def send_init(self) -&gt; None:
+    &#34;&#34;&#34;Send an admin init message. Usually not used directly. Used whens
+    doing QR login or restoring session.&#34;&#34;&#34;
+    init_message = websocket.WebsocketMessage(None, [
+        &#34;admin&#34;, &#34;init&#34;, self.profile[&#34;version&#34;],
+        [
+            self.profile[&#34;long_description&#34;],
+            self.profile[&#34;short_description&#34;]
+        ], self.session.client_id, True
+    ])
+    await self.websocket.send_message(init_message)
+
+    resp = await self.websocket.messages.get(init_message.tag)
+    if resp[&#34;status&#34;] != 200:
+        logger.error(&#34;unexpected init stts code, resp:%s&#34;, resp)
+        raise exceptions.StatusCodeError(resp[&#34;status&#34;])
+
+    self.session.server_id = resp[&#34;ref&#34;]</code></pre>
+</details>
+</dd>
+<dt id="kyros.client.Client.setup_ws"><code class="name flex">
+<span>async def <span class="ident">setup_ws</span></span>(<span>self) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Connect to websocket server.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def setup_ws(self) -&gt; None:
+    &#34;&#34;&#34;Connect to websocket server.&#34;&#34;&#34;
+    self.websocket = websocket.WebsocketClient(self.message_handler)
+    await self.websocket.connect()
+    self.websocket.load_session(self.session)</code></pre>
+</details>
+</dd>
+<dt id="kyros.client.Client.shutdown"><code class="name flex">
+<span>async def <span class="ident">shutdown</span></span>(<span>self) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Do a cleanup. Closes websocket connection.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def shutdown(self) -&gt; None:
+    &#34;&#34;&#34;Do a cleanup. Closes websocket connection.&#34;&#34;&#34;
+    logger.info(&#34;Shutting down&#34;)
+    await self.websocket.shutdown()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="kyros" href="index.html">kyros</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="kyros.client.Client" href="#kyros.client.Client">Client</a></code></h4>
+<ul class="two-column">
+<li><code><a title="kyros.client.Client.create" href="#kyros.client.Client.create">create</a></code></li>
+<li><code><a title="kyros.client.Client.ensure_safe" href="#kyros.client.Client.ensure_safe">ensure_safe</a></code></li>
+<li><code><a title="kyros.client.Client.load_profile" href="#kyros.client.Client.load_profile">load_profile</a></code></li>
+<li><code><a title="kyros.client.Client.logout" href="#kyros.client.Client.logout">logout</a></code></li>
+<li><code><a title="kyros.client.Client.qr_login" href="#kyros.client.Client.qr_login">qr_login</a></code></li>
+<li><code><a title="kyros.client.Client.resolve_challenge" href="#kyros.client.Client.resolve_challenge">resolve_challenge</a></code></li>
+<li><code><a title="kyros.client.Client.restore_session" href="#kyros.client.Client.restore_session">restore_session</a></code></li>
+<li><code><a title="kyros.client.Client.send_init" href="#kyros.client.Client.send_init">send_init</a></code></li>
+<li><code><a title="kyros.client.Client.setup_ws" href="#kyros.client.Client.setup_ws">setup_ws</a></code></li>
+<li><code><a title="kyros.client.Client.shutdown" href="#kyros.client.Client.shutdown">shutdown</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
