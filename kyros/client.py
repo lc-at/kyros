@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import base64
 import logging
+from typing import Any, Awaitable, Callable, Sequence, Union
 
 import donna25519
 
@@ -11,8 +14,20 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 class Client:
+    """This class is the wrapper for WhatsApp Web.
+    Errors mainly shown as log messages (using `logging`).
+    Some methods might raise an exception that will interrupt the
+    whole session. Please make sure to catch any exception thrown.
+    You might want to use the `Client.ensure_safe` method.
+    Please note that some exceptions should not be ignored as it might
+    be important (example: a timeout error when sending a message will
+    result in the failing of message delivery). A much better and pythonic
+    way to handle and raise exception is still a pending task."""
     @classmethod
-    async def create(cls):
+    async def create(cls) -> Client:
+        """The proper way to instantiate `Client` class. Connects to
+        websocket server, also sets up the default client profile.
+        Returns a ready to use `Client` instance."""
         instance = cls()
         await instance.setup_ws()
         instance.load_profile(constants.CLIENT_VERSION,
@@ -21,7 +36,9 @@ class Client:
         logger.info("Kyros instance created")
         return instance
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initiate class. Do not initiate this way, use `Client.create()`
+        instead."""
         self.profile = None
         self.message_handler = message.MessageHandler()
         self.session = session.Session()
@@ -31,12 +48,17 @@ class Client:
         self.phone_info = {}
         self.websocket = None
 
-    async def setup_ws(self):
+    async def setup_ws(self) -> None:
+        """Connect to websocket server."""
         self.websocket = websocket.WebsocketClient(self.message_handler)
         await self.websocket.connect()
         self.websocket.load_session(self.session)
 
-    def load_profile(self, ver, long_desc, short_desc):
+    def load_profile(self, ver: Sequence[Union[float, int]], long_desc: str,
+                     short_desc: str) -> None:
+        """Loads a new client profile (which will be shown in the WhatsApp
+        mobile app). Please note that the client profile is unchangeable after
+        logging in (after admin init)."""
         logger.debug("Loaded new profile")
         self.profile = {
             "version": ver,
@@ -44,7 +66,9 @@ class Client:
             "short_description": short_desc,
         }
 
-    async def send_init(self):
+    async def send_init(self) -> None:
+        """Send an admin init message. Usually not used directly. Used whens
+        doing QR login or restoring session."""
         init_message = websocket.WebsocketMessage(None, [
             "admin", "init", self.profile["version"],
             [
@@ -61,7 +85,14 @@ class Client:
 
         self.session.server_id = resp["ref"]
 
-    async def qr_login(self):
+    async def qr_login(self) -> (str, Awaitable):
+        """Does a QR login. Sends init then return the qr data
+        which will be shown using `pyqrcode` or another library and.
+        also returns a waitable which will timeout in 20 seconds.
+        20 seconds is the maximum amount of time for the QR code to be
+        considered valid.
+        Raises `asyncio.TimeoutError` if timeout reached.
+        Another exception might also possible."""
         await self.send_init()
 
         async def wait_qr_scan():
@@ -104,7 +135,13 @@ class Client:
 
         return qr_data, wait_qr_scan()
 
-    async def restore_session(self, new_session=None):  # noqa: mc0001
+    async def restore_session(  # noqa: mc0001
+            self, new_session: session.Session = None) -> session.Session:
+        """Restores a session. Returns the new session object.
+        If `new_session` argument specified, replace current session with
+        the new one.
+        Raises asyncio.TimeoutError when a websocket request reaches timeout.
+        Old session is restored when it fails restoring the new one."""
         old_session = self.session
         if new_session:
             self.session = new_session
@@ -160,9 +197,12 @@ class Client:
                 self.session = old_session
             raise
 
-    async def resolve_challenge(self, challenge):
+    async def resolve_challenge(self, challenge: str) -> None:
+        """Resolve a challenge string. Sings challenge with mac_key and send
+        a challenge response ws message. Usually called when restoring session.
+        Raises `asyncio.TimeoutError` when timeout reached."""
         challenge = base64.b64decode(challenge.encode()).decode()
-        signed = crypto.sign_with_mac(challenge, self.session.mac_key)
+        signed = crypto.hmac_sha256(self.session.mac_key, challenge)
 
         chall_reply_message = websocket.WebsocketMessage(
             None, [
@@ -176,9 +216,16 @@ class Client:
         if status != 200:
             raise exceptions.StatusCodeError(status)
 
-        return True
+        return
 
-    async def ensure_safe(self, func, *args, **kwargs):
+    async def ensure_safe(self, func: Callable, *args: Any,
+                          **kwargs: Any) -> (Union[None, Exception], Any):
+        """A function intended to be used to run another function without
+        raising any exception. Returns an exception as first element of
+        the tuple if available. Also returns the result of the function call
+        as the second element of the tuple if no exceptions raised. If `func`
+        is a coroutine function, this function returns the awaited result.
+        """
         try:
             return_value = func(*args, **kwargs)
             if asyncio.iscoroutine(return_value):
@@ -188,10 +235,13 @@ class Client:
             logger.error("Exception %s raised at %s", exc, func.__name__)
             return exc, None
 
-    async def logout(self):
+    async def logout(self) -> None:
+        """Sends a logout message to the websocket server. This will
+        invalidate the session."""
         await self.websocket.send_message(
             websocket.WebsocketMessage(None, ["admin", "Conn", "disconnect"]))
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
+        """Do a cleanup. Closes websocket connection."""
         logger.info("Shutting down")
         await self.websocket.shutdown()
