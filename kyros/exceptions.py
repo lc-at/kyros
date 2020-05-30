@@ -9,5 +9,5 @@ class StatusCodeError(Exception):
     status code."""
     def __init__(self, code):
         self.code = code
-        message = f'Unexpected status code: {code}'
+        message = f"Unexpected status code: {code}"
         super().__init__(message)
