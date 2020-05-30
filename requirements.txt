@@ -1,3 +1,4 @@
 websockets
-curve25519
+donna25519
 pycryptodome
+protobuf
