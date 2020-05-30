@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.1" />
+<title>kyros.websocket API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>kyros.websocket</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from __future__ import annotations
+
+import asyncio
+import json
+import logging
+from typing import AnyStr, Optional, Sequence
+
+import websockets
+
+from . import constants, crypto, exceptions, utilities
+from .message import MessageHandler
+from .session import Session
+
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+
+class WebsocketMessage:
+    &#34;&#34;&#34;
+    `WebsocketMessage` acts as a container for websocket messages.
+    `data` attribute always contains a decoded or decrypted
+    data (for binary messages).
+    `tag` is also automatically generated if None is given as the tag.
+    &#34;&#34;&#34;
+    def __init__(self,
+                 tag: Optional[str] = None,
+                 data: Optional[AnyStr] = None) -&gt; None:
+        &#34;&#34;&#34;Initiate the class.&#34;&#34;&#34;
+        self.tag = tag
+        if not self.tag:
+            self.tag = utilities.generate_message_tag()
+        self.data = data
+
+        self.is_binary = False
+
+    def serialize(self, keys: Sequence[bytes]) -&gt; AnyStr:
+        &#34;&#34;&#34;Unserialize the message. A regular JSON message
+        will be encoded. A binary message will be encrypted and also
+        prefixed with an HMAC checksum. It returns a ready-to-send
+        websocket message.&#34;&#34;&#34;
+        if not self.is_binary:
+            return self.encode()
+        return self.encrypt(keys)
+
+    def encrypt(self, keys: Sequence[bytes]) -&gt; bytes:
+        enc_key, mac_key = keys
+        checksum = crypto.hmac_sha256(mac_key, self.data)
+        serialized = f&#34;{self.tag},&#34;.encode()
+        serialized += checksum
+        serialized += crypto.aes_encrypt(enc_key, self.data)
+        return serialized
+
+    def encode(self) -&gt; str:
+        &#34;&#34;&#34;JSON encode the message if the message is not a
+        binary message.&#34;&#34;&#34;
+        encoded_message = f&#34;{self.tag},{json.dumps(self.data)}&#34;
+        return encoded_message
+
+    @classmethod
+    def unserialize(cls, message: AnyStr,
+                    keys: Sequence[bytes]) -&gt; WebsocketMessage:
+        &#34;&#34;&#34;Process a message and decide whether it is a binary
+        message or a regular JSON message. Then it will serialize
+        the message according to its type.&#34;&#34;&#34;
+        if not isinstance(message, bytes):
+            return cls.from_encoded(message)
+        return cls.from_encrypted(message, keys)
+
+    @classmethod
+    def from_encoded(cls, message: str) -&gt; WebsocketMessage:
+        &#34;&#34;&#34;Returns an initiated class from an encoded message.&#34;&#34;&#34;
+        tag, encoded_data = message.split(&#34;,&#34;, 1)
+        return cls(tag, json.loads(encoded_data))
+
+    @classmethod
+    def from_encrypted(cls, message: bytes,
+                       keys: Sequence[bytes]) -&gt; WebsocketMessage:
+        &#34;&#34;&#34;Returns an initiated class from a binary message.
+        This function also decrypts the contained message.&#34;&#34;&#34;
+        enc_key, mac_key = keys
+        instance = cls()
+        instance.is_binary = True
+
+        tag, data = message.split(b&#34;,&#34;, 1)
+        instance.tag = tag
+
+        checksum = data[:32]
+        encrypted_data = data[32:]
+
+        if crypto.hmac_sha256(mac_key, encrypted_data) != checksum:
+            raise exceptions.HMACValidationError
+
+        instance.data = crypto.aes_decrypt(enc_key, encrypted_data)
+
+        return instance
+
+
+class WebsocketMessages:
+    &#34;&#34;&#34;This class acts as a container for `WebsocketMessage` instances.
+    Allows an easy access to messages in queue. The messages are feed
+    by `WebsocketClient` class.&#34;&#34;&#34;
+    messages = {}
+
+    def add(self, tag: str, data: AnyStr):
+        &#34;&#34;&#34;Appends a message to the messages mapping.&#34;&#34;&#34;
+        self.messages[tag] = data
+
+    def get(self, tag: str, timeout: Optional[int] = 10):
+        &#34;&#34;&#34;Gets a message with specified tag. If not currently
+        present, it will wait until `timeout` reached. Raises
+        asyncio.TimeoutError when timed out.&#34;&#34;&#34;
+        async def get_message():
+            while tag not in self.messages:
+                await asyncio.sleep(0)
+            return self.messages.pop(tag)
+
+        logger.debug(&#34;Getting message with tag %s&#34;, tag)
+
+        return asyncio.wait_for(get_message(), timeout)
+
+
+class WebsocketClient:
+    &#34;&#34;&#34;Acts as interface for websocket communication with WhatsApp&#39;s
+    websocket server.&#34;&#34;&#34;
+    websocket: websockets.WebSocketClientProtocol = None
+    kyros_session: Session = None
+    messages: WebsocketMessages = WebsocketMessages()
+
+    def __init__(self, message_handler: MessageHandler) -&gt; None:
+        &#34;&#34;&#34;Initiate the class. Registers message handler.&#34;&#34;&#34;
+        self.handle_message = message_handler
+
+    async def connect(self) -&gt; None:
+        &#34;&#34;&#34;Connects to the websocket server. Starts message receiver or
+        listener.&#34;&#34;&#34;
+        logger.debug(&#34;Connecting to ws server&#34;)
+        self.websocket = await websockets.connect(
+            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN)
+        logger.debug(&#34;Websocket connected&#34;)
+        self._start_receiver()
+
+    def load_session(self, session: Session) -&gt; None:
+        &#34;&#34;&#34;Loads a session. This will make sure that all references are
+        updated. If there is a key change, the new key will be used to
+        decrypt new messages.&#34;&#34;&#34;
+        self.kyros_session = session
+
+    def get_keys(self) -&gt; Sequence[bytes]:
+        &#34;&#34;&#34;Extract necessary keys from session to decrypt and encrypt
+        binary messages.&#34;&#34;&#34;
+        return self.kyros_session.enc_key, self.kyros_session.mac_key
+
+    async def shutdown(self) -&gt; None:
+        &#34;&#34;&#34;Does a cleanup. Closes websocket connection.&#34;&#34;&#34;
+        if self.websocket.open:
+            logger.debug(&#34;Closing websocket server&#34;)
+            await self.websocket.close()
+
+    def _start_receiver(self) -&gt; None:
+        &#34;&#34;&#34;Starts a receiver coroutine. Listens for a new websocket message
+        from queue.&#34;&#34;&#34;
+        async def receiver():
+            while True:
+                if not self.websocket or not self.websocket.open:
+                    logger.debug(&#34;receiver returned: no ws/connection closed&#34;)
+                    return
+
+                if not self.websocket.messages or self.websocket.closed:
+                    await asyncio.sleep(0)
+                    continue
+
+                raw_message = self.websocket.messages.pop()
+                try:
+                    message = WebsocketMessage.unserialize(
+                        raw_message, self.get_keys())
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.warning(&#34;Ignored error decoding message: %s&#34;, exc)
+                    await asyncio.sleep(0)
+                    continue
+
+                logger.debug(&#34;Received WS message with tag %s&#34;, message.tag)
+                self.messages.add(message.tag, message.data)
+
+        asyncio.ensure_future(receiver())
+        logger.debug(&#34;Executed receiver coroutine&#34;)
+
+    async def send_message(self, message: WebsocketMessage) -&gt; None:
+        &#34;&#34;&#34;Sends a websocket message.&#34;&#34;&#34;
+        logger.debug(&#34;Sending a WS message with tag %s&#34;, message.tag)
+        await self.websocket.send(message.serialize(self.get_keys()))</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="kyros.websocket.WebsocketClient"><code class="flex name class">
+<span>class <span class="ident">WebsocketClient</span></span>
+<span>(</span><span>message_handler: MessageHandler)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Acts as interface for websocket communication with WhatsApp's
+websocket server.</p>
+<p>Initiate the class. Registers message handler.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class WebsocketClient:
+    &#34;&#34;&#34;Acts as interface for websocket communication with WhatsApp&#39;s
+    websocket server.&#34;&#34;&#34;
+    websocket: websockets.WebSocketClientProtocol = None
+    kyros_session: Session = None
+    messages: WebsocketMessages = WebsocketMessages()
+
+    def __init__(self, message_handler: MessageHandler) -&gt; None:
+        &#34;&#34;&#34;Initiate the class. Registers message handler.&#34;&#34;&#34;
+        self.handle_message = message_handler
+
+    async def connect(self) -&gt; None:
+        &#34;&#34;&#34;Connects to the websocket server. Starts message receiver or
+        listener.&#34;&#34;&#34;
+        logger.debug(&#34;Connecting to ws server&#34;)
+        self.websocket = await websockets.connect(
+            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN)
+        logger.debug(&#34;Websocket connected&#34;)
+        self._start_receiver()
+
+    def load_session(self, session: Session) -&gt; None:
+        &#34;&#34;&#34;Loads a session. This will make sure that all references are
+        updated. If there is a key change, the new key will be used to
+        decrypt new messages.&#34;&#34;&#34;
+        self.kyros_session = session
+
+    def get_keys(self) -&gt; Sequence[bytes]:
+        &#34;&#34;&#34;Extract necessary keys from session to decrypt and encrypt
+        binary messages.&#34;&#34;&#34;
+        return self.kyros_session.enc_key, self.kyros_session.mac_key
+
+    async def shutdown(self) -&gt; None:
+        &#34;&#34;&#34;Does a cleanup. Closes websocket connection.&#34;&#34;&#34;
+        if self.websocket.open:
+            logger.debug(&#34;Closing websocket server&#34;)
+            await self.websocket.close()
+
+    def _start_receiver(self) -&gt; None:
+        &#34;&#34;&#34;Starts a receiver coroutine. Listens for a new websocket message
+        from queue.&#34;&#34;&#34;
+        async def receiver():
+            while True:
+                if not self.websocket or not self.websocket.open:
+                    logger.debug(&#34;receiver returned: no ws/connection closed&#34;)
+                    return
+
+                if not self.websocket.messages or self.websocket.closed:
+                    await asyncio.sleep(0)
+                    continue
+
+                raw_message = self.websocket.messages.pop()
+                try:
+                    message = WebsocketMessage.unserialize(
+                        raw_message, self.get_keys())
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.warning(&#34;Ignored error decoding message: %s&#34;, exc)
+                    await asyncio.sleep(0)
+                    continue
+
+                logger.debug(&#34;Received WS message with tag %s&#34;, message.tag)
+                self.messages.add(message.tag, message.data)
+
+        asyncio.ensure_future(receiver())
+        logger.debug(&#34;Executed receiver coroutine&#34;)
+
+    async def send_message(self, message: WebsocketMessage) -&gt; None:
+        &#34;&#34;&#34;Sends a websocket message.&#34;&#34;&#34;
+        logger.debug(&#34;Sending a WS message with tag %s&#34;, message.tag)
+        await self.websocket.send(message.serialize(self.get_keys()))</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="kyros.websocket.WebsocketClient.kyros_session"><code class="name">var <span class="ident">kyros_session</span> : <a title="kyros.session.Session" href="session.html#kyros.session.Session">Session</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="kyros.websocket.WebsocketClient.messages"><code class="name">var <span class="ident">messages</span> : <a title="kyros.websocket.WebsocketMessages" href="#kyros.websocket.WebsocketMessages">WebsocketMessages</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="kyros.websocket.WebsocketClient.websocket"><code class="name">var <span class="ident">websocket</span> : websockets.client.WebSocketClientProtocol</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="kyros.websocket.WebsocketClient.connect"><code class="name flex">
+<span>async def <span class="ident">connect</span></span>(<span>self) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Connects to the websocket server. Starts message receiver or
+listener.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def connect(self) -&gt; None:
+    &#34;&#34;&#34;Connects to the websocket server. Starts message receiver or
+    listener.&#34;&#34;&#34;
+    logger.debug(&#34;Connecting to ws server&#34;)
+    self.websocket = await websockets.connect(
+        constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN)
+    logger.debug(&#34;Websocket connected&#34;)
+    self._start_receiver()</code></pre>
+</details>
+</dd>
+<dt id="kyros.websocket.WebsocketClient.get_keys"><code class="name flex">
+<span>def <span class="ident">get_keys</span></span>(<span>self) -> Sequence[bytes]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Extract necessary keys from session to decrypt and encrypt
+binary messages.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_keys(self) -&gt; Sequence[bytes]:
+    &#34;&#34;&#34;Extract necessary keys from session to decrypt and encrypt
+    binary messages.&#34;&#34;&#34;
+    return self.kyros_session.enc_key, self.kyros_session.mac_key</code></pre>
+</details>
+</dd>
+<dt id="kyros.websocket.WebsocketClient.load_session"><code class="name flex">
+<span>def <span class="ident">load_session</span></span>(<span>self, session: Session) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Loads a session. This will make sure that all references are
+updated. If there is a key change, the new key will be used to
+decrypt new messages.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_session(self, session: Session) -&gt; None:
+    &#34;&#34;&#34;Loads a session. This will make sure that all references are
+    updated. If there is a key change, the new key will be used to
+    decrypt new messages.&#34;&#34;&#34;
+    self.kyros_session = session</code></pre>
+</details>
+</dd>
+<dt id="kyros.websocket.WebsocketClient.send_message"><code class="name flex">
+<span>async def <span class="ident">send_message</span></span>(<span>self, message: WebsocketMessage) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sends a websocket message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def send_message(self, message: WebsocketMessage) -&gt; None:
+    &#34;&#34;&#34;Sends a websocket message.&#34;&#34;&#34;
+    logger.debug(&#34;Sending a WS message with tag %s&#34;, message.tag)
+    await self.websocket.send(message.serialize(self.get_keys()))</code></pre>
+</details>
+</dd>
+<dt id="kyros.websocket.WebsocketClient.shutdown"><code class="name flex">
+<span>async def <span class="ident">shutdown</span></span>(<span>self) -> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Does a cleanup. Closes websocket connection.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def shutdown(self) -&gt; None:
+    &#34;&#34;&#34;Does a cleanup. Closes websocket connection.&#34;&#34;&#34;
+    if self.websocket.open:
+        logger.debug(&#34;Closing websocket server&#34;)
+        await self.websocket.close()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="kyros.websocket.WebsocketMessage"><code class="flex name class">
+<span>class <span class="ident">WebsocketMessage</span></span>
+<span>(</span><span>tag: Optional[str] = None, data: Optional[AnyStr] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p><code><a title="kyros.websocket.WebsocketMessage" href="#kyros.websocket.WebsocketMessage">WebsocketMessage</a></code> acts as a container for websocket messages.
+<code>data</code> attribute always contains a decoded or decrypted
+data (for binary messages).
+<code>tag</code> is also automatically generated if None is given as the tag.</p>
+<p>Initiate the class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class WebsocketMessage:
+    &#34;&#34;&#34;
+    `WebsocketMessage` acts as a container for websocket messages.
+    `data` attribute always contains a decoded or decrypted
+    data (for binary messages).
+    `tag` is also automatically generated if None is given as the tag.
+    &#34;&#34;&#34;
+    def __init__(self,
+                 tag: Optional[str] = None,
+                 data: Optional[AnyStr] = None) -&gt; None:
+        &#34;&#34;&#34;Initiate the class.&#34;&#34;&#34;
+        self.tag = tag
+        if not self.tag:
+            self.tag = utilities.generate_message_tag()
+        self.data = data
+
+        self.is_binary = False
+
+    def serialize(self, keys: Sequence[bytes]) -&gt; AnyStr:
+        &#34;&#34;&#34;Unserialize the message. A regular JSON message
+        will be encoded. A binary message will be encrypted and also
+        prefixed with an HMAC checksum. It returns a ready-to-send
+        websocket message.&#34;&#34;&#34;
+        if not self.is_binary:
+            return self.encode()
+        return self.encrypt(keys)
+
+    def encrypt(self, keys: Sequence[bytes]) -&gt; bytes:
+        enc_key, mac_key = keys
+        checksum = crypto.hmac_sha256(mac_key, self.data)
+        serialized = f&#34;{self.tag},&#34;.encode()
+        serialized += checksum
+        serialized += crypto.aes_encrypt(enc_key, self.data)
+        return serialized
+
+    def encode(self) -&gt; str:
+        &#34;&#34;&#34;JSON encode the message if the message is not a
+        binary message.&#34;&#34;&#34;
+        encoded_message = f&#34;{self.tag},{json.dumps(self.data)}&#34;
+        return encoded_message
+
+    @classmethod
+    def unserialize(cls, message: AnyStr,
+                    keys: Sequence[bytes]) -&gt; WebsocketMessage:
+        &#34;&#34;&#34;Process a message and decide whether it is a binary
+        message or a regular JSON message. Then it will serialize
+        the message according to its type.&#34;&#34;&#34;
+        if not isinstance(message, bytes):
+            return cls.from_encoded(message)
+        return cls.from_encrypted(message, keys)
+
+    @classmethod
+    def from_encoded(cls, message: str) -&gt; WebsocketMessage:
+        &#34;&#34;&#34;Returns an initiated class from an encoded message.&#34;&#34;&#34;
+        tag, encoded_data = message.split(&#34;,&#34;, 1)
+        return cls(tag, json.loads(encoded_data))
+
+    @classmethod
+    def from_encrypted(cls, message: bytes,
+                       keys: Sequence[bytes]) -&gt; WebsocketMessage:
+        &#34;&#34;&#34;Returns an initiated class from a binary message.
+        This function also decrypts the contained message.&#34;&#34;&#34;
+        enc_key, mac_key = keys
+        instance = cls()
+        instance.is_binary = True
+
+        tag, data = message.split(b&#34;,&#34;, 1)
+        instance.tag = tag
+
+        checksum = data[:32]
+        encrypted_data = data[32:]
+
+        if crypto.hmac_sha256(mac_key, encrypted_data) != checksum:
+            raise exceptions.HMACValidationError
+
+        instance.data = crypto.aes_decrypt(enc_key, encrypted_data)
+
+        return instance</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="kyros.websocket.WebsocketMessage.from_encoded"><code class="name flex">
+<span>def <span class="ident">from_encoded</span></span>(<span>message: str) -> <a title="kyros.websocket.WebsocketMessage" href="#kyros.websocket.WebsocketMessage">WebsocketMessage</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns an initiated class from an encoded message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def from_encoded(cls, message: str) -&gt; WebsocketMessage:
+    &#34;&#34;&#34;Returns an initiated class from an encoded message.&#34;&#34;&#34;
+    tag, encoded_data = message.split(&#34;,&#34;, 1)
+    return cls(tag, json.loads(encoded_data))</code></pre>
+</details>
+</dd>
+<dt id="kyros.websocket.WebsocketMessage.from_encrypted"><code class="name flex">
+<span>def <span class="ident">from_encrypted</span></span>(<span>message: bytes, keys: Sequence[bytes]) -> <a title="kyros.websocket.WebsocketMessage" href="#kyros.websocket.WebsocketMessage">WebsocketMessage</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns an initiated class from a binary message.
+This function also decrypts the contained message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def from_encrypted(cls, message: bytes,
+                   keys: Sequence[bytes]) -&gt; WebsocketMessage:
+    &#34;&#34;&#34;Returns an initiated class from a binary message.
+    This function also decrypts the contained message.&#34;&#34;&#34;
+    enc_key, mac_key = keys
+    instance = cls()
+    instance.is_binary = True
+
+    tag, data = message.split(b&#34;,&#34;, 1)
+    instance.tag = tag
+
+    checksum = data[:32]
+    encrypted_data = data[32:]
+
+    if crypto.hmac_sha256(mac_key, encrypted_data) != checksum:
+        raise exceptions.HMACValidationError
+
+    instance.data = crypto.aes_decrypt(enc_key, encrypted_data)
+
+    return instance</code></pre>
+</details>
+</dd>
+<dt id="kyros.websocket.WebsocketMessage.unserialize"><code class="name flex">
+<span>def <span class="ident">unserialize</span></span>(<span>message: AnyStr, keys: Sequence[bytes]) -> <a title="kyros.websocket.WebsocketMessage" href="#kyros.websocket.WebsocketMessage">WebsocketMessage</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Process a message and decide whether it is a binary
+message or a regular JSON message. Then it will serialize
+the message according to its type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def unserialize(cls, message: AnyStr,
+                keys: Sequence[bytes]) -&gt; WebsocketMessage:
+    &#34;&#34;&#34;Process a message and decide whether it is a binary
+    message or a regular JSON message. Then it will serialize
+    the message according to its type.&#34;&#34;&#34;
+    if not isinstance(message, bytes):
+        return cls.from_encoded(message)
+    return cls.from_encrypted(message, keys)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="kyros.websocket.WebsocketMessage.encode"><code class="name flex">
+<span>def <span class="ident">encode</span></span>(<span>self) -> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>JSON encode the message if the message is not a
+binary message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def encode(self) -&gt; str:
+    &#34;&#34;&#34;JSON encode the message if the message is not a
+    binary message.&#34;&#34;&#34;
+    encoded_message = f&#34;{self.tag},{json.dumps(self.data)}&#34;
+    return encoded_message</code></pre>
+</details>
+</dd>
+<dt id="kyros.websocket.WebsocketMessage.encrypt"><code class="name flex">
+<span>def <span class="ident">encrypt</span></span>(<span>self, keys: Sequence[bytes]) -> bytes</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def encrypt(self, keys: Sequence[bytes]) -&gt; bytes:
+    enc_key, mac_key = keys
+    checksum = crypto.hmac_sha256(mac_key, self.data)
+    serialized = f&#34;{self.tag},&#34;.encode()
+    serialized += checksum
+    serialized += crypto.aes_encrypt(enc_key, self.data)
+    return serialized</code></pre>
+</details>
+</dd>
+<dt id="kyros.websocket.WebsocketMessage.serialize"><code class="name flex">
+<span>def <span class="ident">serialize</span></span>(<span>self, keys: Sequence[bytes]) -> ~AnyStr</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Unserialize the message. A regular JSON message
+will be encoded. A binary message will be encrypted and also
+prefixed with an HMAC checksum. It returns a ready-to-send
+websocket message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def serialize(self, keys: Sequence[bytes]) -&gt; AnyStr:
+    &#34;&#34;&#34;Unserialize the message. A regular JSON message
+    will be encoded. A binary message will be encrypted and also
+    prefixed with an HMAC checksum. It returns a ready-to-send
+    websocket message.&#34;&#34;&#34;
+    if not self.is_binary:
+        return self.encode()
+    return self.encrypt(keys)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="kyros.websocket.WebsocketMessages"><code class="flex name class">
+<span>class <span class="ident">WebsocketMessages</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class acts as a container for <code><a title="kyros.websocket.WebsocketMessage" href="#kyros.websocket.WebsocketMessage">WebsocketMessage</a></code> instances.
+Allows an easy access to messages in queue. The messages are feed
+by <code><a title="kyros.websocket.WebsocketClient" href="#kyros.websocket.WebsocketClient">WebsocketClient</a></code> class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class WebsocketMessages:
+    &#34;&#34;&#34;This class acts as a container for `WebsocketMessage` instances.
+    Allows an easy access to messages in queue. The messages are feed
+    by `WebsocketClient` class.&#34;&#34;&#34;
+    messages = {}
+
+    def add(self, tag: str, data: AnyStr):
+        &#34;&#34;&#34;Appends a message to the messages mapping.&#34;&#34;&#34;
+        self.messages[tag] = data
+
+    def get(self, tag: str, timeout: Optional[int] = 10):
+        &#34;&#34;&#34;Gets a message with specified tag. If not currently
+        present, it will wait until `timeout` reached. Raises
+        asyncio.TimeoutError when timed out.&#34;&#34;&#34;
+        async def get_message():
+            while tag not in self.messages:
+                await asyncio.sleep(0)
+            return self.messages.pop(tag)
+
+        logger.debug(&#34;Getting message with tag %s&#34;, tag)
+
+        return asyncio.wait_for(get_message(), timeout)</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="kyros.websocket.WebsocketMessages.messages"><code class="name">var <span class="ident">messages</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="kyros.websocket.WebsocketMessages.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, tag: str, data: AnyStr)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Appends a message to the messages mapping.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add(self, tag: str, data: AnyStr):
+    &#34;&#34;&#34;Appends a message to the messages mapping.&#34;&#34;&#34;
+    self.messages[tag] = data</code></pre>
+</details>
+</dd>
+<dt id="kyros.websocket.WebsocketMessages.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, tag: str, timeout: Optional[int] = 10)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets a message with specified tag. If not currently
+present, it will wait until <code>timeout</code> reached. Raises
+asyncio.TimeoutError when timed out.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get(self, tag: str, timeout: Optional[int] = 10):
+    &#34;&#34;&#34;Gets a message with specified tag. If not currently
+    present, it will wait until `timeout` reached. Raises
+    asyncio.TimeoutError when timed out.&#34;&#34;&#34;
+    async def get_message():
+        while tag not in self.messages:
+            await asyncio.sleep(0)
+        return self.messages.pop(tag)
+
+    logger.debug(&#34;Getting message with tag %s&#34;, tag)
+
+    return asyncio.wait_for(get_message(), timeout)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="kyros" href="index.html">kyros</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="kyros.websocket.WebsocketClient" href="#kyros.websocket.WebsocketClient">WebsocketClient</a></code></h4>
+<ul class="two-column">
+<li><code><a title="kyros.websocket.WebsocketClient.connect" href="#kyros.websocket.WebsocketClient.connect">connect</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketClient.get_keys" href="#kyros.websocket.WebsocketClient.get_keys">get_keys</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketClient.kyros_session" href="#kyros.websocket.WebsocketClient.kyros_session">kyros_session</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketClient.load_session" href="#kyros.websocket.WebsocketClient.load_session">load_session</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketClient.messages" href="#kyros.websocket.WebsocketClient.messages">messages</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketClient.send_message" href="#kyros.websocket.WebsocketClient.send_message">send_message</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketClient.shutdown" href="#kyros.websocket.WebsocketClient.shutdown">shutdown</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketClient.websocket" href="#kyros.websocket.WebsocketClient.websocket">websocket</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="kyros.websocket.WebsocketMessage" href="#kyros.websocket.WebsocketMessage">WebsocketMessage</a></code></h4>
+<ul class="two-column">
+<li><code><a title="kyros.websocket.WebsocketMessage.encode" href="#kyros.websocket.WebsocketMessage.encode">encode</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketMessage.encrypt" href="#kyros.websocket.WebsocketMessage.encrypt">encrypt</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketMessage.from_encoded" href="#kyros.websocket.WebsocketMessage.from_encoded">from_encoded</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketMessage.from_encrypted" href="#kyros.websocket.WebsocketMessage.from_encrypted">from_encrypted</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketMessage.serialize" href="#kyros.websocket.WebsocketMessage.serialize">serialize</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketMessage.unserialize" href="#kyros.websocket.WebsocketMessage.unserialize">unserialize</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="kyros.websocket.WebsocketMessages" href="#kyros.websocket.WebsocketMessages">WebsocketMessages</a></code></h4>
+<ul class="">
+<li><code><a title="kyros.websocket.WebsocketMessages.add" href="#kyros.websocket.WebsocketMessages.add">add</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketMessages.get" href="#kyros.websocket.WebsocketMessages.get">get</a></code></li>
+<li><code><a title="kyros.websocket.WebsocketMessages.messages" href="#kyros.websocket.WebsocketMessages.messages">messages</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
