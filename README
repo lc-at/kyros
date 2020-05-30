@@ -5,13 +5,44 @@
 |_|\_\\__, |_|  \___/|___/
       |___/               
 
-Kyros is a python wrapper or an API for WhatsApp Web.
-It is based on the reverse engineered version of WhatsApp Web (https://github.com/sigalor/whatsapp-web-reveng).
-Some references are also coming from one of the reimplementation of whatsapp-web-reveng, https://github.com/Rhymen/go-whatsapp.
+Kyros is a Python based implementation of WhatsApp Web API that aims to 
+provide a clean interface for developers.
+This module is designed to work with Python 3.6 or latest.
+Special thanks to @sigalor and @Rhymen, this project is largely motivated by 
+their work (whatsapp-web-reveng and go-whatsapp).
 
-The work is still on progress. But somehow, it is just currently halted for me (I will continue doing it in the future).
-Any form of contribution are welcomed. I will happily review your pull requests. There are lots of things to be done.
 
+INSTALLATION
+============
+You could install Kyros by using pip or directly cloning it.
+For example, if you want to use pip:
+$ pip install git+https://git@github.com/ttycelery/kyros
+
+DOCUMENTATION
+=============
+"Documentation" kind of thing for this project is available at
+https://ttycelery.github.io/kyros/.
+
+
+CONTRIBUTION
+============
+This work is still being slowly developed. Your contribution will of course
+make the development process of this project even faster. Any kind of contribution
+is highly appreciated.
+
+LICENSE
+=======
+This project is licensed with MIT License.
+
+DISCLAIMER
+==========
+This code is in no way affiliated with, authorized, maintained, sponsored
+or endorsed by WhatsApp or any of its affiliates or subsidiaries. This is
+an independent and unofficial software. Use at your own risk.
+
+
+WORK PROGRESS
+=============
 Already done:
 - Websocket communication (basic things like connecting, handling json messages and their respective tags)
 - Doing QR login
@@ -19,20 +50,17 @@ Already done:
 - Logging out
 - Session management (basic things like import and export from a file)
 - Decrypting messages
+- Encrypting messages
 
 Currently doing:
-- Session restoration (untested)
-- Read from existing session (untested)
+- Test: session restoration
+- Test: read from an existing session
 
 To-do:
 - Implementation of binary reader (encoder/decoder)
-- Encrypting messages
 - Reading messages
 - Sending messages
 - Handling messages
 - ...
 - A good exception/error handling in Kyros
-
-
-DISCLAIMER
-This code is in no way affiliated with, authorized, maintained, sponsored or endorsed by WhatsApp or any of its affiliates or subsidiaries. This is an independent and unofficial software. Use at your own risk.
+- Change this ugly lazy README into a beautiful markdown
