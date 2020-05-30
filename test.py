@@ -22,7 +22,6 @@ async def amain():
         return
     await asyncio.sleep(5)
     await whatsapp.logout()
-    breakpoint()
 
 
 if __name__ == "__main__":
