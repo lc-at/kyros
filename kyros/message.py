@@ -1,4 +1,5 @@
 class MessageHandler:
+    """Future class. To be implemented soon."""
     def handle_text_message(self):
         pass
 

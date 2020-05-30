@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import pickle
 
 
 class Session:
+    """Container class for session data.
+    Has methods to import and export a serialized
+    `Session` object."""
     client_id = None
     server_id = None
 
@@ -25,10 +30,10 @@ class Session:
     wid = None
 
     @staticmethod
-    def from_file(filename):
+    def from_file(filename: str) -> Session:
         with open(filename, "rb") as file:
             return pickle.load(file)
 
-    def save_to_file(self, filename):
+    def save_to_file(self, filename: str) -> Session:
         with open(filename, "wb") as file:
             return pickle.dump(self, file)
