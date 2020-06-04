@@ -25,13 +25,14 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">from .client import Client
+from .exceptions import HMACValidationError, StatusCodeError
 from .message import MessageHandler
 from .session import Session
-from .exceptions import HMACValidationError, StatusCodeError
+from .websocket import WebsocketMessage
 
 __all__ = [
     &#34;Client&#34;, &#34;MessageHandler&#34;, &#34;Session&#34;, &#34;StatusCodeError&#34;,
-    &#34;HMACValidationError&#34;
+    &#34;HMACValidationError&#34;, &#34;WebsocketMessage&#34;
 ]</code></pre>
 </details>
 </section>
@@ -945,7 +946,7 @@ status code.</p></div>
     status code.&#34;&#34;&#34;
     def __init__(self, code):
         self.code = code
-        message = f&#39;Unexpected status code: {code}&#39;
+        message = f&#34;Unexpected status code: {code}&#34;
         super().__init__(message)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -953,6 +954,238 @@ status code.</p></div>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>
+</dd>
+<dt id="kyros.WebsocketMessage"><code class="flex name class">
+<span>class <span class="ident">WebsocketMessage</span></span>
+<span>(</span><span>tag: Optional[str] = None, data: Optional[AnyStr] = None, is_binary: Optional[bool] = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p><code><a title="kyros.WebsocketMessage" href="#kyros.WebsocketMessage">WebsocketMessage</a></code> acts as a container for websocket messages.
+<code>data</code> attribute always contains a decoded or decrypted
+data (for binary messages).
+<code>tag</code> is also automatically generated if None is given as the tag.</p>
+<p>Initiate the class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class WebsocketMessage:
+    &#34;&#34;&#34;
+    `WebsocketMessage` acts as a container for websocket messages.
+    `data` attribute always contains a decoded or decrypted
+    data (for binary messages).
+    `tag` is also automatically generated if None is given as the tag.
+    &#34;&#34;&#34;
+    def __init__(self,
+                 tag: Optional[str] = None,
+                 data: Optional[AnyStr] = None,
+                 is_binary: Optional[bool] = False) -&gt; None:
+        &#34;&#34;&#34;Initiate the class.&#34;&#34;&#34;
+
+        self.tag = tag
+        if not self.tag:
+            self.tag = utilities.generate_message_tag()
+
+        self.data = data
+        self.is_binary = is_binary
+
+    def serialize(self, keys: Sequence[bytes]) -&gt; AnyStr:
+        &#34;&#34;&#34;Unserialize the message. A regular JSON message
+        will be encoded. A binary message will be encrypted and also
+        prefixed with an HMAC checksum. It returns a ready-to-send
+        websocket message.&#34;&#34;&#34;
+        if not self.is_binary:
+            return self.encode()
+        return self.encrypt(keys)
+
+    def encrypt(self, keys: Sequence[bytes]) -&gt; bytes:
+        &#34;&#34;&#34;Encrypts a binary message.&#34;&#34;&#34;
+        enc_key, mac_key = keys
+        checksum = crypto.hmac_sha256(mac_key, self.data)
+        serialized = f&#34;{self.tag},&#34;.encode()
+        serialized += checksum
+        serialized += crypto.aes_encrypt(enc_key, self.data)
+        return serialized
+
+    def encode(self) -&gt; str:
+        &#34;&#34;&#34;JSON encode the message if the message is not a
+        binary message.&#34;&#34;&#34;
+        encoded_message = f&#34;{self.tag},{json.dumps(self.data)}&#34;
+        return encoded_message
+
+    @classmethod
+    def unserialize(cls, message: AnyStr,
+                    keys: Sequence[bytes]) -&gt; WebsocketMessage:
+        &#34;&#34;&#34;Process a message and decide whether it is a binary
+        message or a regular JSON message. Then it will serialize
+        the message according to its type.&#34;&#34;&#34;
+        if not isinstance(message, bytes):
+            return cls.from_encoded(message)
+        return cls.from_encrypted(message, keys)
+
+    @classmethod
+    def from_encoded(cls, message: str) -&gt; WebsocketMessage:
+        &#34;&#34;&#34;Returns an initiated class from an encoded message.&#34;&#34;&#34;
+        tag, encoded_data = message.split(&#34;,&#34;, 1)
+        return cls(tag, json.loads(encoded_data))
+
+    @classmethod
+    def from_encrypted(cls, message: bytes,
+                       keys: Sequence[bytes]) -&gt; WebsocketMessage:
+        &#34;&#34;&#34;Returns an initiated class from a binary message.
+        This function also decrypts the contained message.&#34;&#34;&#34;
+        enc_key, mac_key = keys
+        instance = cls()
+        instance.is_binary = True
+
+        tag, data = message.split(b&#34;,&#34;, 1)
+        instance.tag = tag
+
+        checksum = data[:32]
+        encrypted_data = data[32:]
+
+        if crypto.hmac_sha256(mac_key, encrypted_data) != checksum:
+            raise exceptions.HMACValidationError
+
+        instance.data = crypto.aes_decrypt(enc_key, encrypted_data)
+
+        return instance</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="kyros.WebsocketMessage.from_encoded"><code class="name flex">
+<span>def <span class="ident">from_encoded</span></span>(<span>message: str) -> <a title="kyros.websocket.WebsocketMessage" href="websocket.html#kyros.websocket.WebsocketMessage">WebsocketMessage</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns an initiated class from an encoded message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def from_encoded(cls, message: str) -&gt; WebsocketMessage:
+    &#34;&#34;&#34;Returns an initiated class from an encoded message.&#34;&#34;&#34;
+    tag, encoded_data = message.split(&#34;,&#34;, 1)
+    return cls(tag, json.loads(encoded_data))</code></pre>
+</details>
+</dd>
+<dt id="kyros.WebsocketMessage.from_encrypted"><code class="name flex">
+<span>def <span class="ident">from_encrypted</span></span>(<span>message: bytes, keys: Sequence[bytes]) -> <a title="kyros.websocket.WebsocketMessage" href="websocket.html#kyros.websocket.WebsocketMessage">WebsocketMessage</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns an initiated class from a binary message.
+This function also decrypts the contained message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def from_encrypted(cls, message: bytes,
+                   keys: Sequence[bytes]) -&gt; WebsocketMessage:
+    &#34;&#34;&#34;Returns an initiated class from a binary message.
+    This function also decrypts the contained message.&#34;&#34;&#34;
+    enc_key, mac_key = keys
+    instance = cls()
+    instance.is_binary = True
+
+    tag, data = message.split(b&#34;,&#34;, 1)
+    instance.tag = tag
+
+    checksum = data[:32]
+    encrypted_data = data[32:]
+
+    if crypto.hmac_sha256(mac_key, encrypted_data) != checksum:
+        raise exceptions.HMACValidationError
+
+    instance.data = crypto.aes_decrypt(enc_key, encrypted_data)
+
+    return instance</code></pre>
+</details>
+</dd>
+<dt id="kyros.WebsocketMessage.unserialize"><code class="name flex">
+<span>def <span class="ident">unserialize</span></span>(<span>message: AnyStr, keys: Sequence[bytes]) -> <a title="kyros.websocket.WebsocketMessage" href="websocket.html#kyros.websocket.WebsocketMessage">WebsocketMessage</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Process a message and decide whether it is a binary
+message or a regular JSON message. Then it will serialize
+the message according to its type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def unserialize(cls, message: AnyStr,
+                keys: Sequence[bytes]) -&gt; WebsocketMessage:
+    &#34;&#34;&#34;Process a message and decide whether it is a binary
+    message or a regular JSON message. Then it will serialize
+    the message according to its type.&#34;&#34;&#34;
+    if not isinstance(message, bytes):
+        return cls.from_encoded(message)
+    return cls.from_encrypted(message, keys)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="kyros.WebsocketMessage.encode"><code class="name flex">
+<span>def <span class="ident">encode</span></span>(<span>self) -> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>JSON encode the message if the message is not a
+binary message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def encode(self) -&gt; str:
+    &#34;&#34;&#34;JSON encode the message if the message is not a
+    binary message.&#34;&#34;&#34;
+    encoded_message = f&#34;{self.tag},{json.dumps(self.data)}&#34;
+    return encoded_message</code></pre>
+</details>
+</dd>
+<dt id="kyros.WebsocketMessage.encrypt"><code class="name flex">
+<span>def <span class="ident">encrypt</span></span>(<span>self, keys: Sequence[bytes]) -> bytes</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Encrypts a binary message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def encrypt(self, keys: Sequence[bytes]) -&gt; bytes:
+    &#34;&#34;&#34;Encrypts a binary message.&#34;&#34;&#34;
+    enc_key, mac_key = keys
+    checksum = crypto.hmac_sha256(mac_key, self.data)
+    serialized = f&#34;{self.tag},&#34;.encode()
+    serialized += checksum
+    serialized += crypto.aes_encrypt(enc_key, self.data)
+    return serialized</code></pre>
+</details>
+</dd>
+<dt id="kyros.WebsocketMessage.serialize"><code class="name flex">
+<span>def <span class="ident">serialize</span></span>(<span>self, keys: Sequence[bytes]) -> ~AnyStr</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Unserialize the message. A regular JSON message
+will be encoded. A binary message will be encrypted and also
+prefixed with an HMAC checksum. It returns a ready-to-send
+websocket message.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def serialize(self, keys: Sequence[bytes]) -&gt; AnyStr:
+    &#34;&#34;&#34;Unserialize the message. A regular JSON message
+    will be encoded. A binary message will be encrypted and also
+    prefixed with an HMAC checksum. It returns a ready-to-send
+    websocket message.&#34;&#34;&#34;
+    if not self.is_binary:
+        return self.encode()
+    return self.encrypt(keys)</code></pre>
+</details>
+</dd>
+</dl>
 </dd>
 </dl>
 </section>
@@ -1032,6 +1265,17 @@ status code.</p></div>
 </li>
 <li>
 <h4><code><a title="kyros.StatusCodeError" href="#kyros.StatusCodeError">StatusCodeError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="kyros.WebsocketMessage" href="#kyros.WebsocketMessage">WebsocketMessage</a></code></h4>
+<ul class="two-column">
+<li><code><a title="kyros.WebsocketMessage.encode" href="#kyros.WebsocketMessage.encode">encode</a></code></li>
+<li><code><a title="kyros.WebsocketMessage.encrypt" href="#kyros.WebsocketMessage.encrypt">encrypt</a></code></li>
+<li><code><a title="kyros.WebsocketMessage.from_encoded" href="#kyros.WebsocketMessage.from_encoded">from_encoded</a></code></li>
+<li><code><a title="kyros.WebsocketMessage.from_encrypted" href="#kyros.WebsocketMessage.from_encrypted">from_encrypted</a></code></li>
+<li><code><a title="kyros.WebsocketMessage.serialize" href="#kyros.WebsocketMessage.serialize">serialize</a></code></li>
+<li><code><a title="kyros.WebsocketMessage.unserialize" href="#kyros.WebsocketMessage.unserialize">unserialize</a></code></li>
+</ul>
 </li>
 </ul>
 </li>
