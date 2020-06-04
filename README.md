@@ -1,6 +1,7 @@
 # Kyros
 Kyros, for now, is a Python interface to communicate easier with WhatsApp Web API.
 It provides an interface to connect and communicate with WhatsApp Web's websocket server.
+Kyros will handle encryption and decryption kind of things.
 In the future, Kyros is aimed to provide a full implementation of WhatsApp Web API which will give developers
 a clean interface to work with (more or less like ![go-whatsapp](https://github.com/Rhymen/go-whatsapp)).
 This module is designed to work with Python 3.6 or latest.
