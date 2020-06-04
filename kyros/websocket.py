@@ -23,14 +23,16 @@ class WebsocketMessage:
     """
     def __init__(self,
                  tag: Optional[str] = None,
-                 data: Optional[AnyStr] = None) -> None:
+                 data: Optional[AnyStr] = None,
+                 is_binary: Optional[bool] = False) -> None:
         """Initiate the class."""
+
         self.tag = tag
         if not self.tag:
             self.tag = utilities.generate_message_tag()
-        self.data = data
 
-        self.is_binary = False
+        self.data = data
+        self.is_binary = is_binary
 
     def serialize(self, keys: Sequence[bytes]) -> AnyStr:
         """Unserialize the message. A regular JSON message
@@ -42,6 +44,7 @@ class WebsocketMessage:
         return self.encrypt(keys)
 
     def encrypt(self, keys: Sequence[bytes]) -> bytes:
+        """Encrypts a binary message."""
         enc_key, mac_key = keys
         checksum = crypto.hmac_sha256(mac_key, self.data)
         serialized = f"{self.tag},".encode()
