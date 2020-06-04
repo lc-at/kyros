@@ -1,8 +1,8 @@
-# pylint: disable=invalid-name
+#pylint: disable=invalid-name
 import Crypto.Cipher.AES
 import Crypto.Hash
 import Crypto.Protocol
-import Crypto.Util
+import Crypto.Util.Padding
 
 
 def hkdf_expand(key: bytes, length: int) -> bytes:
