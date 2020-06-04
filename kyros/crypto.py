@@ -1,4 +1,4 @@
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 import Crypto.Cipher.AES
 import Crypto.Hash
 import Crypto.Protocol
