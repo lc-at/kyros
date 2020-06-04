@@ -49,14 +49,16 @@ class WebsocketMessage:
     &#34;&#34;&#34;
     def __init__(self,
                  tag: Optional[str] = None,
-                 data: Optional[AnyStr] = None) -&gt; None:
+                 data: Optional[AnyStr] = None,
+                 is_binary: Optional[bool] = False) -&gt; None:
         &#34;&#34;&#34;Initiate the class.&#34;&#34;&#34;
+
         self.tag = tag
         if not self.tag:
             self.tag = utilities.generate_message_tag()
-        self.data = data
 
-        self.is_binary = False
+        self.data = data
+        self.is_binary = is_binary
 
     def serialize(self, keys: Sequence[bytes]) -&gt; AnyStr:
         &#34;&#34;&#34;Unserialize the message. A regular JSON message
@@ -68,6 +70,7 @@ class WebsocketMessage:
         return self.encrypt(keys)
 
     def encrypt(self, keys: Sequence[bytes]) -&gt; bytes:
+        &#34;&#34;&#34;Encrypts a binary message.&#34;&#34;&#34;
         enc_key, mac_key = keys
         checksum = crypto.hmac_sha256(mac_key, self.data)
         serialized = f&#34;{self.tag},&#34;.encode()
@@ -412,7 +415,7 @@ decrypt new messages.</p></div>
 </dd>
 <dt id="kyros.websocket.WebsocketMessage"><code class="flex name class">
 <span>class <span class="ident">WebsocketMessage</span></span>
-<span>(</span><span>tag: Optional[str] = None, data: Optional[AnyStr] = None)</span>
+<span>(</span><span>tag: Optional[str] = None, data: Optional[AnyStr] = None, is_binary: Optional[bool] = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p><code><a title="kyros.websocket.WebsocketMessage" href="#kyros.websocket.WebsocketMessage">WebsocketMessage</a></code> acts as a container for websocket messages.
@@ -433,14 +436,16 @@ data (for binary messages).
     &#34;&#34;&#34;
     def __init__(self,
                  tag: Optional[str] = None,
-                 data: Optional[AnyStr] = None) -&gt; None:
+                 data: Optional[AnyStr] = None,
+                 is_binary: Optional[bool] = False) -&gt; None:
         &#34;&#34;&#34;Initiate the class.&#34;&#34;&#34;
+
         self.tag = tag
         if not self.tag:
             self.tag = utilities.generate_message_tag()
-        self.data = data
 
-        self.is_binary = False
+        self.data = data
+        self.is_binary = is_binary
 
     def serialize(self, keys: Sequence[bytes]) -&gt; AnyStr:
         &#34;&#34;&#34;Unserialize the message. A regular JSON message
@@ -452,6 +457,7 @@ data (for binary messages).
         return self.encrypt(keys)
 
     def encrypt(self, keys: Sequence[bytes]) -&gt; bytes:
+        &#34;&#34;&#34;Encrypts a binary message.&#34;&#34;&#34;
         enc_key, mac_key = keys
         checksum = crypto.hmac_sha256(mac_key, self.data)
         serialized = f&#34;{self.tag},&#34;.encode()
@@ -600,12 +606,13 @@ binary message.</p></div>
 <span>def <span class="ident">encrypt</span></span>(<span>self, keys: Sequence[bytes]) -> bytes</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Encrypts a binary message.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def encrypt(self, keys: Sequence[bytes]) -&gt; bytes:
+    &#34;&#34;&#34;Encrypts a binary message.&#34;&#34;&#34;
     enc_key, mac_key = keys
     checksum = crypto.hmac_sha256(mac_key, self.data)
     serialized = f&#34;{self.tag},&#34;.encode()
