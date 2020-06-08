@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import AnyStr, Optional, Sequence
+from typing import AnyStr, Optional, Sequence, Union
 
 import websockets
 
@@ -60,7 +60,7 @@ class WebsocketMessage:
 
     @classmethod
     def unserialize(cls, message: AnyStr,
-                    keys: Sequence[bytes]) -> WebsocketMessage:
+                    keys: Sequence[bytes]) -> Union[WebsocketMessage, None]:
         """Process a message and decide whether it is a binary
         message or a regular JSON message. Then it will serialize
         the message according to its type."""
@@ -76,10 +76,11 @@ class WebsocketMessage:
 
     @classmethod
     def from_encrypted(cls, message: bytes,
-                       keys: Sequence[bytes]) -> WebsocketMessage:
+                       keys: Sequence[bytes]) -> Union[WebsocketMessage, None]:
         """Returns an initiated class from a binary message.
-        This function also decrypts the contained message."""
+        This function also decrypts the contained message. """
         enc_key, mac_key = keys
+
         instance = cls()
         instance.is_binary = True
 
@@ -88,6 +89,10 @@ class WebsocketMessage:
 
         checksum = data[:32]
         encrypted_data = data[32:]
+
+        if not (enc_key and mac_key):
+            logging.info("dropping binary message with tag %s (no keys)", tag)
+            return None
 
         if crypto.hmac_sha256(mac_key, encrypted_data) != checksum:
             raise exceptions.HMACValidationError
@@ -149,7 +154,7 @@ class WebsocketClient:
 
     def get_keys(self) -> Sequence[bytes]:
         """Extract necessary keys from session to decrypt and encrypt
-        binary messages."""
+        binary messages. """
         return self.kyros_session.enc_key, self.kyros_session.mac_key
 
     async def shutdown(self) -> None:
@@ -180,8 +185,10 @@ class WebsocketClient:
                     await asyncio.sleep(0)
                     continue
 
-                logger.debug("Received WS message with tag %s", message.tag)
-                self.messages.add(message.tag, message.data)
+                if message:
+                    logger.debug("Received WS message with tag %s",
+                                 message.tag)
+                    self.messages.add(message.tag, message.data)
 
         asyncio.ensure_future(receiver())
         logger.debug("Executed receiver coroutine")
