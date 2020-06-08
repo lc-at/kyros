@@ -79,8 +79,6 @@ an independent and unofficial software. Use at your own risk.
 
 
 ## To-do List
-- Test: session restoration
-- Test: read from an existing session
 - Implementation of binary reader (encoder/decoder)
 - A good exception/error handling in Kyros
 - Reading messages
