@@ -76,13 +76,3 @@ This project is licensed with MIT License.
 This code is in no way affiliated with, authorized, maintained, sponsored
 or endorsed by WhatsApp or any of its affiliates or subsidiaries. This is
 an independent and unofficial software. Use at your own risk.
-
-
-## To-do List
-- Test: session restoration
-- Test: read from an existing session
-- Implementation of binary reader (encoder/decoder)
-- A good exception/error handling in Kyros
-- Reading messages
-- Sending messages
-- Handling messages
