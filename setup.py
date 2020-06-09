@@ -14,7 +14,7 @@ def get_requirements():
 
 setuptools.setup(
     name="kyros",
-    version="1.0.1",
+    version="1.0.2",
     author="loncat",
     author_email="me@lcat.dev",
     description="A Python wrapper for WhatsApp Web API",
