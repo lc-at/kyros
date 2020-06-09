@@ -124,7 +124,6 @@ class Client:
 
             self.session.enc_key = self.session.keys_decrypted[:32]
             self.session.mac_key = self.session.keys_decrypted[32:64]
-            print(self.session.enc_key, self.session.mac_key)
 
         qr_fragments = [
             self.session.server_id,
@@ -170,24 +169,21 @@ class Client:
             s2_message = None
             if len(s1_message) == 2 and s1_message[0] == "Cmd" \
                     and s1_message[1]["type"] == "challenge":
-                if not self.resolve_challenge(s1_message["challenge"]):
-                    logger.error("failed to solve challenge")
-                    return False
-
-                s2_message = self.websocket.messages.get("s2")
+                await self.resolve_challenge(s1_message[1]["challenge"])
+                s2_message = await self.websocket.messages.get("s2")
 
             login_resp = await self.websocket.messages.get(login_message.tag)
             if login_resp["status"] != 200:
                 raise exceptions.StatusCodeError(login_resp["status"])
 
             conn_resp = s2_message if s2_message else s1_message
-            self.phone_info = conn_resp["phone"]
-            self.session.wid = conn_resp["wid"]
-            self.session.client_token = conn_resp["clientToken"]
-            self.session.server_token = conn_resp["serverToken"]
+            info = conn_resp[1]
+            self.phone_info = info["phone"]
+            self.session.wid = info["wid"]
+            self.session.client_token = info["clientToken"]
+            self.session.server_token = info["serverToken"]
 
             self.websocket.load_session(self.session)  # reload references
-
             return self.session
 
         try:
@@ -201,7 +197,7 @@ class Client:
         """Resolve a challenge string. Sings challenge with mac_key and send
         a challenge response ws message. Usually called when restoring session.
         Raises `asyncio.TimeoutError` when timeout reached."""
-        challenge = base64.b64decode(challenge.encode()).decode()
+        challenge = base64.b64decode(challenge.encode())
         signed = crypto.hmac_sha256(self.session.mac_key, challenge)
 
         chall_reply_message = websocket.WebsocketMessage(
@@ -212,11 +208,11 @@ class Client:
             ])
         await self.websocket.send_message(chall_reply_message)
 
-        status = self.websocket.messages.get(chall_reply_message)["status"]
-        if status != 200:
-            raise exceptions.StatusCodeError(status)
+        resp = await self.websocket.messages.get(chall_reply_message.tag)
+        if resp["status"] != 200:
+            raise exceptions.StatusCodeError(resp["status"])
 
-        return
+        return True
 
     async def ensure_safe(self, func: Callable, *args: Any,
                           **kwargs: Any) -> (Union[None, Exception], Any):
