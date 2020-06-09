@@ -3,10 +3,10 @@ Kyros, for now, is a Python interface to communicate easier with WhatsApp Web AP
 It provides an interface to connect and communicate with WhatsApp Web's websocket server.
 Kyros will handle encryption and decryption kind of things.
 In the future, Kyros is aimed to provide a full implementation of WhatsApp Web API which will give developers
-a clean interface to work with (more or less like ![go-whatsapp](https://github.com/Rhymen/go-whatsapp)).
+a clean interface to work with (more or less like [go-whatsapp](https://github.com/Rhymen/go-whatsapp)).
 This module is designed to work with Python 3.6 or latest.
-Special thanks to the creator of ![whatsapp-web-reveng](https://github.com/sigalor/whatsapp-web-reveng)
-and ![go-whatsapp](https://github.com/Rhymen/go-whatsapp). This project is largely motivated by their work.
+Special thanks to the creator of [whatsapp-web-reveng](https://github.com/sigalor/whatsapp-web-reveng)
+and [go-whatsapp](https://github.com/Rhymen/go-whatsapp). This project is largely motivated by their work.
 Please note that Kyros is not meant to be used actively in production servers as it is currently not 
 production ready. Use it at your own risk.
 
@@ -61,7 +61,7 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
-A "much more detailed documentation" kind of thing for this project is available ![here](https://p4kl0nc4t.github.io/kyros/).
+A "much more detailed documentation" kind of thing for this project is available [here](https://p4kl0nc4t.github.io/kyros/).
 You will see a piece of nightmare, happy exploring! Better documentation are being planned.
 
 ## Contribution
