@@ -25,7 +25,7 @@ import logging
 
 import pyqrcode
 
-from kyros import Client, WebsocketMessage
+import kyros
 
 logging.basicConfig()
 # set a logging level: just to know if something (bad?) happens
