@@ -56,7 +56,7 @@ typed-ast==1.4.1
 typing==3.7.4.1
 watchdog==0.10.2
 websocket-client==0.57.0
-websockets==8.1
+websockets==9.1
 wrapt==1.11.2
 yapf==0.30.0
 zipp==3.1.0
