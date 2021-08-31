@@ -24,7 +24,7 @@ pylint-django==2.0.12
 pylint-flask==0.6
 pylint-plugin-utils==0.6
 PyQRCode==1.2.1
-PyYAML==5.3.1
+PyYAML==5.4
 regex==2020.4.4
 requirements-detector==0.6
 rope==0.16.0
