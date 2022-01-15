@@ -126,7 +126,7 @@ class Client:
             self.session.mac_key = self.session.keys_decrypted[32:64]
 
             # First call of keep alive after session initialized
-            await self.websocket.keepAlive()
+            await self.websocket.keep_alive()
 
         qr_fragments = [
             self.session.server_id,
@@ -189,7 +189,7 @@ class Client:
             self.websocket.load_session(self.session)  # reload references
 
             # First call of keep alive after session reloaded
-            await self.websocket.keepAlive()
+            await self.websocket.keep_alive()
             return self.session
 
         try:
