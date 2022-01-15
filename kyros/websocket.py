@@ -13,6 +13,18 @@ from .session import Session
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
+class Timer:
+    def __init__(self, timeout, callback):
+        self._timeout = timeout
+        self._callback = callback
+        self._task = asyncio.ensure_future(self._job())
+
+    async def _job(self):
+        await asyncio.sleep(self._timeout)
+        await self._callback()
+
+    def cancel(self):
+        self._task.cancel()
 
 class WebsocketMessage:
     """
@@ -142,9 +154,15 @@ class WebsocketClient:
         listener."""
         logger.debug("Connecting to ws server")
         self.websocket = await websockets.connect(
-            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN)
+            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN, , close_timeout = None,ping_interval = None)
         logger.debug("Websocket connected")
         self._start_receiver()
+
+    async def keepAlive(self):
+        if self.websocket and self.websocket.open:
+            await self.websocket.send('?,,')
+            # Send keepalive every 10 seconds
+            Timer(10.0, self.keepAlive)
 
     def load_session(self, session: Session) -> None:
         """Loads a session. This will make sure that all references are
@@ -177,6 +195,11 @@ class WebsocketClient:
                     continue
 
                 raw_message = self.websocket.messages.pop()
+
+                # Ignore server timestamp responses
+                if raw_message[:1] == "!":
+                    continue
+
                 try:
                     message = WebsocketMessage.unserialize(
                         raw_message, self.get_keys())
