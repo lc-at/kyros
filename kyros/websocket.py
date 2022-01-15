@@ -154,7 +154,7 @@ class WebsocketClient:
         listener."""
         logger.debug("Connecting to ws server")
         self.websocket = await websockets.connect(
-            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN, , close_timeout = None,ping_interval = None)
+            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN, close_timeout = None,ping_interval = None)
         logger.debug("Websocket connected")
         self._start_receiver()
 
