@@ -13,6 +13,7 @@ from .session import Session
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
+
 class Timer:
     def __init__(self, timeout, callback):
         self._timeout = timeout
@@ -26,6 +27,7 @@ class Timer:
     def cancel(self):
         self._task.cancel()
 
+
 class WebsocketMessage:
     """
     `WebsocketMessage` acts as a container for websocket messages.
@@ -33,6 +35,7 @@ class WebsocketMessage:
     data (for binary messages).
     `tag` is also automatically generated if None is given as the tag.
     """
+
     def __init__(self,
                  tag: Optional[str] = None,
                  data: Optional[AnyStr] = None,
@@ -154,15 +157,15 @@ class WebsocketClient:
         listener."""
         logger.debug("Connecting to ws server")
         self.websocket = await websockets.connect(
-            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN, close_timeout = None,ping_interval = None)
+            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN, close_timeout=None, ping_interval=None)
         logger.debug("Websocket connected")
         self._start_receiver()
 
-    async def keepAlive(self):
+    async def keep_alive(self):
         if self.websocket and self.websocket.open:
             await self.websocket.send('?,,')
             # Send keepalive every 10 seconds
-            Timer(10.0, self.keepAlive)
+            Timer(10.0, self.keep_alive)
 
     def load_session(self, session: Session) -> None:
         """Loads a session. This will make sure that all references are
