@@ -162,9 +162,9 @@ class WebsocketClient:
         self._start_receiver()
 
     async def keep_alive(self):
+        """Emits a message to the server to keep the connection alive."""
         if self.websocket and self.websocket.open:
             await self.websocket.send('?,,')
-            # Send keepalive every 10 seconds
             Timer(10.0, self.keep_alive)
 
     def load_session(self, session: Session) -> None:
