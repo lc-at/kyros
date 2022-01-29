@@ -219,8 +219,11 @@ class WebsocketClient:
                     Plaintext messages are added to the messages queue.
                     Binary messages are handled by the message handler."""
                     try:
-                        json.loads(json.dumps(message.data))
+                        obj = json.loads(json.dumps(message.data))
                         self.messages.add(message.tag, message.data)
+                        if obj[0] == "Conn":
+                            await self.keep_alive()
+                            continue
                     except:
                         self.handle_message.handle_message(message)
 
