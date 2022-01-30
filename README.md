@@ -3,10 +3,10 @@ Kyros, for now, is a Python interface to communicate easier with WhatsApp Web AP
 It provides an interface to connect and communicate with WhatsApp Web's websocket server.
 Kyros will handle encryption and decryption kind of things.
 In the future, Kyros is aimed to provide a full implementation of WhatsApp Web API which will give developers
-a clean interface to work with (more or less like ![go-whatsapp](https://github.com/Rhymen/go-whatsapp)).
+a clean interface to work with (more or less like [go-whatsapp](https://github.com/Rhymen/go-whatsapp)).
 This module is designed to work with Python 3.6 or latest.
-Special thanks to the creator of ![whatsapp-web-reveng](https://github.com/sigalor/whatsapp-web-reveng)
-and ![go-whatsapp](https://github.com/Rhymen/go-whatsapp). This project is largely motivated by their work.
+Special thanks to the creator of [whatsapp-web-reveng](https://github.com/sigalor/whatsapp-web-reveng)
+and [go-whatsapp](https://github.com/Rhymen/go-whatsapp). This project is largely motivated by their work.
 Please note that Kyros is not meant to be used actively in production servers as it is currently not 
 production ready. Use it at your own risk.
 
@@ -22,34 +22,47 @@ pip install git+https://git@github.com/ttycelery/kyros
 ```python
 import asyncio
 import logging
+from os.path import exists
 
 import pyqrcode
 
-from kyros import Client, WebsocketMessage
+import kyros
 
 logging.basicConfig()
 # set a logging level: just to know if something (bad?) happens
-logging.getLogger("kyros").setLevel(logging.WARNING)
+logger = logging.getLogger("kyros")
+logger.setLevel(logging.DEBUG)
+
+def handle_message(message):
+    logger.debug("Sample received message: %s", message)
+
 
 async def main():
     # create the Client instance using create class method
-    whatsapp = await kyros.Client.create()
-    
-    # do a QR login
-    qr_data, scanned = await whatsapp.qr_login()
-    
-    # generate qr code image
-    qr_code = pyqrcode.create(qr_data)
-    print(qr_code.terminal(quiet_zone=1))
+    whatsapp = await kyros.Client.create(handle_message)
 
-    try:
-        # wait for the QR code to be scanned
-        await scanned
-    except asyncio.TimeoutError:
-        # timed out (left unscanned), do a shutdown
-        await whatsapp.shutdown()
-        return
-    
+    if exists("wp_session.json"):
+        currSession = kyros.Session.from_file("wp_session.json")
+        await whatsapp.restore_session(currSession)
+    else:
+        # do a QR login
+        qr_data, scanned = await whatsapp.qr_login()
+
+        # generate qr code image
+        qr_code = pyqrcode.create(qr_data)
+        print(qr_code.terminal(quiet_zone=1))
+        qr_code.svg('sample-qr.svg', scale=2)
+
+        try:
+            # wait for the QR code to be scanned
+            await scanned
+        except asyncio.TimeoutError:
+            # timed out (left unscanned), do a shutdown
+            await whatsapp.shutdown()
+            return
+
+        whatsapp.session.save_to_file("wp_session.json")
+
     # how to send a websocket message
     message = kyros.WebsocketMessage(None, ["query", "exist", "1234@c.us"])
     await whatsapp.websocket.send_message(message)
@@ -57,11 +70,13 @@ async def main():
     # receive a websocket message
     print(await whatsapp.websocket.messages.get(message.tag))
 
+    # Await forever until app stopped with Ctrl+C
+    await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
-A "much more detailed documentation" kind of thing for this project is available ![here](https://ttycelery.github.io/kyros/).
+A "much more detailed documentation" kind of thing for this project is available [here](https://ttycelery.github.io/kyros/).
 You will see a piece of nightmare, happy exploring! Better documentation are being planned.
 
 ## Contribution

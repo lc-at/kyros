@@ -24,11 +24,11 @@ class Client:
     result in the failing of message delivery). A much better and pythonic
     way to handle and raise exception is still a pending task."""
     @classmethod
-    async def create(cls) -> Client:
+    async def create(cls, on_message=None) -> Client:
         """The proper way to instantiate `Client` class. Connects to
         websocket server, also sets up the default client profile.
         Returns a ready to use `Client` instance."""
-        instance = cls()
+        instance = cls(on_message)
         await instance.setup_ws()
         instance.load_profile(constants.CLIENT_VERSION,
                               constants.CLIENT_LONG_DESC,
@@ -36,11 +36,11 @@ class Client:
         logger.info("Kyros instance created")
         return instance
 
-    def __init__(self) -> None:
+    def __init__(self, on_message=None) -> None:
         """Initiate class. Do not initiate this way, use `Client.create()`
         instead."""
         self.profile = None
-        self.message_handler = message.MessageHandler()
+        self.message_handler = message.MessageHandler(on_message)
         self.session = session.Session()
         self.session.client_id = utilities.generate_client_id()
         self.session.private_key = donna25519.PrivateKey()
@@ -125,6 +125,8 @@ class Client:
             self.session.enc_key = self.session.keys_decrypted[:32]
             self.session.mac_key = self.session.keys_decrypted[32:64]
 
+            await self.websocket.keep_alive()
+
         qr_fragments = [
             self.session.server_id,
             base64.b64encode(self.session.public_key.public).decode(),
@@ -184,6 +186,8 @@ class Client:
             self.session.server_token = info["serverToken"]
 
             self.websocket.load_session(self.session)  # reload references
+
+            await self.websocket.keep_alive()
             return self.session
 
         try:

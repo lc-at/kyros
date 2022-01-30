@@ -14,6 +14,20 @@ from .session import Session
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
+class Timer:
+    def __init__(self, timeout, callback):
+        self._timeout = timeout
+        self._callback = callback
+        self._task = asyncio.ensure_future(self._job())
+
+    async def _job(self):
+        await asyncio.sleep(self._timeout)
+        await self._callback()
+
+    def cancel(self):
+        self._task.cancel()
+
+
 class WebsocketMessage:
     """
     `WebsocketMessage` acts as a container for websocket messages.
@@ -21,6 +35,7 @@ class WebsocketMessage:
     data (for binary messages).
     `tag` is also automatically generated if None is given as the tag.
     """
+
     def __init__(self,
                  tag: Optional[str] = None,
                  data: Optional[AnyStr] = None,
@@ -142,9 +157,15 @@ class WebsocketClient:
         listener."""
         logger.debug("Connecting to ws server")
         self.websocket = await websockets.connect(
-            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN)
+            constants.WEBSOCKET_URI, origin=constants.WEBSOCKET_ORIGIN, close_timeout=None, ping_interval=None)
         logger.debug("Websocket connected")
         self._start_receiver()
+
+    async def keep_alive(self):
+        """Emits a message to the server to keep the connection alive."""
+        if self.websocket and self.websocket.open:
+            await self.websocket.send('?,,')
+            Timer(10.0, self.keep_alive)
 
     def load_session(self, session: Session) -> None:
         """Loads a session. This will make sure that all references are
@@ -177,6 +198,11 @@ class WebsocketClient:
                     continue
 
                 raw_message = self.websocket.messages.pop()
+
+                # Ignore server timestamp responses
+                if raw_message[:1] == "!":
+                    continue
+
                 try:
                     message = WebsocketMessage.unserialize(
                         raw_message, self.get_keys())
@@ -188,7 +214,18 @@ class WebsocketClient:
                 if message:
                     logger.debug("Received WS message with tag %s",
                                  message.tag)
-                    self.messages.add(message.tag, message.data)
+
+                    """Try to parse message as textplain JSON to differentiate from binary messages
+                    Plaintext messages are added to the messages queue.
+                    Binary messages are handled by the message handler."""
+                    try:
+                        obj = json.loads(json.dumps(message.data))
+                        self.messages.add(message.tag, message.data)
+                        if obj[0] == "Conn":
+                            await self.keep_alive()
+                            continue
+                    except:
+                        self.handle_message.handle_message(message)
 
         asyncio.ensure_future(receiver())
         logger.debug("Executed receiver coroutine")
