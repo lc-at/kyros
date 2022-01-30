@@ -214,7 +214,18 @@ class WebsocketClient:
                 if message:
                     logger.debug("Received WS message with tag %s",
                                  message.tag)
-                    self.messages.add(message.tag, message.data)
+
+                    """Try to parse message as textplain JSON to differentiate from binary messages
+                    Plaintext messages are added to the messages queue.
+                    Binary messages are handled by the message handler."""
+                    try:
+                        obj = json.loads(json.dumps(message.data))
+                        self.messages.add(message.tag, message.data)
+                        if obj[0] == "Conn":
+                            await self.keep_alive()
+                            continue
+                    except:
+                        self.handle_message.handle_message(message)
 
         asyncio.ensure_future(receiver())
         logger.debug("Executed receiver coroutine")
