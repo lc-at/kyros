@@ -22,6 +22,7 @@ pip install git+https://git@github.com/p4kl0nc4t/kyros
 ```python
 import asyncio
 import logging
+from os.path import exists
 
 import pyqrcode
 
@@ -29,27 +30,39 @@ import kyros
 
 logging.basicConfig()
 # set a logging level: just to know if something (bad?) happens
-logging.getLogger("kyros").setLevel(logging.WARNING)
+logger = logging.getLogger("kyros")
+logger.setLevel(logging.DEBUG)
+
+def handle_message(message):
+    logger.debug("Sample received message: %s", message)
+
 
 async def main():
     # create the Client instance using create class method
-    whatsapp = await kyros.Client.create()
-    
-    # do a QR login
-    qr_data, scanned = await whatsapp.qr_login()
-    
-    # generate qr code image
-    qr_code = pyqrcode.create(qr_data)
-    print(qr_code.terminal(quiet_zone=1))
+    whatsapp = await kyros.Client.create(handle_message)
 
-    try:
-        # wait for the QR code to be scanned
-        await scanned
-    except asyncio.TimeoutError:
-        # timed out (left unscanned), do a shutdown
-        await whatsapp.shutdown()
-        return
-    
+    if exists("wp_session.json"):
+        currSession = kyros.Session.from_file("wp_session.json")
+        await whatsapp.restore_session(currSession)
+    else:
+        # do a QR login
+        qr_data, scanned = await whatsapp.qr_login()
+
+        # generate qr code image
+        qr_code = pyqrcode.create(qr_data)
+        print(qr_code.terminal(quiet_zone=1))
+        qr_code.svg('sample-qr.svg', scale=2)
+
+        try:
+            # wait for the QR code to be scanned
+            await scanned
+        except asyncio.TimeoutError:
+            # timed out (left unscanned), do a shutdown
+            await whatsapp.shutdown()
+            return
+
+        whatsapp.session.save_to_file("wp_session.json")
+
     # how to send a websocket message
     message = kyros.WebsocketMessage(None, ["query", "exist", "1234@c.us"])
     await whatsapp.websocket.send_message(message)
@@ -57,6 +70,8 @@ async def main():
     # receive a websocket message
     print(await whatsapp.websocket.messages.get(message.tag))
 
+    # Await forever until app stopped with Ctrl+C
+    await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())
