@@ -1,6 +1,6 @@
 from google.protobuf import json_format
 import json
-from .proto import proto
+from .proto import WebMessageInfo
 
 
 class WAFlags:
@@ -31,14 +31,14 @@ class WAMediaAppInfo:
 class WAWebMessageInfo:
     @staticmethod
     def decode(data):
-        msg = proto.WebMessageInfo()
+        msg = WebMessageInfo()
         msg.ParseFromString(data)
         return json.loads(json_format.MessageToJson(msg))
 
     @staticmethod
     def encode(msg):
         data = json_format.Parse(json.dumps(
-            msg), proto.WebMessageInfo(), ignore_unknown_fields=True)
+            msg), WebMessageInfo(), ignore_unknown_fields=True)
         return data.SerializeToString()
 
 
